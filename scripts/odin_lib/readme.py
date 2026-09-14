@@ -55,6 +55,15 @@ ECOSYSTEMS = [
         r"^WORKSPACE(\.bazel)?$", r"^MODULE\.bazel$", r"^BUCK$", r"^pants\.toml$"]),
     ("elixir", "Elixir / Erlang", [r"^mix\.exs$", r"^mix\.lock$", r"^rebar\.config$"]),
     ("swift", "Swift", [r"^Package\.swift$", r"^Package\.resolved$"]),
+    ("zig", "Zig", [r"^build\.zig$", r"^build\.zig\.zon$"]),
+    ("haskell", "Haskell", [r"^stack\.yaml$", r"\.cabal$", r"^cabal\.project$"]),
+    ("ocaml", "OCaml", [r"^dune-project$", r"\.opam$"]),
+    ("nix", "Nix", [r"^flake\.nix$", r"^default\.nix$", r"^shell\.nix$"]),
+    ("terraform", "Terraform / OpenTofu", [r"\.tf$", r"^\.terraform\.lock\.hcl$"]),
+    ("bazel", "Bazel", [
+        r"^BUILD(\.bazel)?$", r"^WORKSPACE(\.bazel)?$", r"^MODULE\.bazel$"]),
+    ("julia", "Julia", [r"^Project\.toml$", r"^Manifest\.toml$"]),
+    ("r", "R", [r"^DESCRIPTION$", r"^renv\.lock$"]),
 ]
 
 CI_PATTERNS = [

@@ -788,6 +788,38 @@ class TestActionManifest(FixtureCase):
 
 class TestClassification(unittest.TestCase):
 
+    def test_modern_language_extensions(self):
+        expected = {
+            "agda": "Agda",
+            "bal": "Ballerina",
+            "bend": "Bend",
+            "chpl": "Chapel",
+            "fnl": "Fennel",
+            "fut": "Futhark",
+            "gleam": "Gleam",
+            "gr": "Grain",
+            "idr": "Idris",
+            "janet": "Janet",
+            "lean": "Lean",
+            "ml4": "OCaml Camlp4 syntax extension",
+            "mojo": "Mojo",
+            "odin": "Odin",
+            "pony": "Pony",
+            "roc": "Roc",
+            "sml": "Standard ML",
+            "spec": "RPM spec",
+            "vale": "Vale",
+            "wat": "WebAssembly text",
+        }
+        for extension, label in expected.items():
+            with self.subTest(extension=extension):
+                self.assertEqual(
+                    classify.classify_extension("fixture." + extension),
+                    (extension, label))
+
+        self.assertEqual(classify.classify_extension("fixture.hx"), ("hx", "Haxe"))
+        self.assertEqual(classify.classify_extension("fixture.rkt"), ("rkt", "Racket"))
+
     def test_shebang_beats_extension(self):
         self.assertEqual(classify.detect_shebang(b"#!/usr/bin/env python3\n")[1], "Python")
         self.assertEqual(classify.detect_shebang(b"#!/bin/bash\n")[1], "Bash")
@@ -945,6 +977,38 @@ class TestReadmeLint(unittest.TestCase):
 
 
 class TestReadmeScan(FixtureCase):
+
+    def test_scan_detects_added_ecosystem_manifests(self):
+        fixtures = {
+            "zig": ["build.zig", "build.zig.zon"],
+            "haskell": ["stack.yaml", "fixture.cabal", "cabal.project"],
+            "ocaml": ["dune-project", "fixture.opam"],
+            "nix": ["flake.nix", "default.nix", "shell.nix"],
+            "terraform": ["main.tf", ".terraform.lock.hcl"],
+            "bazel": ["BUILD", "BUILD.bazel", "WORKSPACE", "WORKSPACE.bazel",
+                      "MODULE.bazel"],
+            "julia": ["Project.toml", "Manifest.toml"],
+            "r": ["DESCRIPTION", "renv.lock"],
+        }
+        expected_evidence = {}
+        for ecosystem, names in fixtures.items():
+            expected_evidence[ecosystem] = []
+            for name in names:
+                path = Path("ecosystems") / ecosystem / name
+                write(self.repo / path, "fixture\n")
+                expected_evidence[ecosystem].append(path.as_posix())
+
+        self.init()
+        run_odin("inventory", artifacts=self.artifacts)
+        code, out = run_odin("readme-scan", artifacts=self.artifacts)
+        self.assertEqual(code, 0, out)
+        report = json.loads(
+            (self.packet / "readme" / "component-map.json").read_text(encoding="utf-8"))
+        detected = report["ecosystems_detected"]
+        for ecosystem, evidence in expected_evidence.items():
+            with self.subTest(ecosystem=ecosystem):
+                self.assertIn(ecosystem, detected)
+                self.assertCountEqual(detected[ecosystem]["evidence"], evidence)
 
     def test_scan_ranks_languages_and_finds_manifests(self):
         self.init()
