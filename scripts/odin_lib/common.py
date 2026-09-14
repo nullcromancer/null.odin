@@ -43,6 +43,7 @@ PACKET_DIRS = [
     "security",
     "static-analysis",
     "sources",
+    "readme",
     "tool-output",
 ]
 

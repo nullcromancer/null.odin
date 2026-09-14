@@ -35,8 +35,15 @@ Re-running `init` is safe: the packet and the manifest are preserved.
 ## `env`
 
 Probes ~45 toolchain and analysis binaries for versions, and records a sanitized
-environment: build-relevant names always, values only for demonstrably non-sensitive
-variables, `<REDACTED>` otherwise. Writes `inventory/environment.json`.
+environment. Writes `inventory/environment.json`.
+
+Values appear only for variables that describe the build or runtime posture and
+identify nobody (`TZ`, `LANG`, `CI`, `NODE_ENV`, `GOFLAGS`, …). Everything else is
+redacted by class: credential-shaped names, path lists (`PATH`, `PYTHONPATH`, … — the
+entry *count* is kept because the shape is useful, the content is not), and
+operator-identifying locations (`HOME`, `USERPROFILE`, `TEMP`, `JAVA_HOME`, …). A packet
+is meant to be shareable, so the operator's username and installed-software inventory
+never reach it.
 
 Tool availability decides which analyses are possible. An unavailable tool becomes an
 `unavailable` manifest action — never a silent substitution.
@@ -63,9 +70,17 @@ Traversal guarantees: bytewise-sorted path order; directories never traversed th
 a symlink; no directory alias traversed twice; symlink targets outside REPO_ROOT
 recorded but never read.
 
+Archive files (zip and tar families) additionally have their **member tables read**
+per the protocol's ARCHIVE RULE: names, sizes, modes and link targets are recorded from
+archive metadata, and nothing is ever extracted. Members are checked for path traversal,
+symlink escape, decompression-bomb ratios and nested archives; a nested archive is
+flagged, never opened. Malformed archives and parser crashes are recorded as findings
+rather than aborting the walk. Archive members are embedded artifacts of their container
+— they are not repository files and get no per-file document.
+
 **Writes:** `inventory/files.jsonl`, `directories.jsonl`, `tree.txt`,
 `source-hashes.sha256` (the baseline), `languages.json`, `file-types.json`,
-`roles.json`, `vcs-state.json`, `inventory-summary.json`,
+`roles.json`, `vcs-state.json`, `inventory-summary.json`, `archives.json`,
 `per-file-documents-required.json`, `traversal-errors.json` (when non-empty), and
 `files/_PATH_MAP.json`.
 
@@ -117,6 +132,49 @@ mechanical fields pre-filled from inventory evidence and the analytic fields mar
 
 Stubs are a starting point, never a deliverable: `validate` fails while any marker
 remains.
+
+## `readme-scan`
+
+Sweeps the inventory for the evidence a repository README must be built from: ranked
+languages, detected ecosystems (14 families, from .NET to Elixir), proposed components,
+entrypoints, build files, manifests and lockfiles, CI systems, containers and IaC,
+configuration files, secret-manager references, test files and frameworks, and
+documentation. Vendored and VCS-metadata content is excluded.
+
+Crucially it also reports **absences** — no CI, no tests, no manifests — because an
+absence is evidence and belongs in the README rather than being silently omitted.
+
+**Writes:** `readme/component-map.json`. Evidence for a README, not prose for one.
+
+## `readme-lint`
+
+```
+odin.py readme-lint [--path README.md] [--no-section-check] [--no-write]
+```
+
+Enforces the README formatting constraints mechanically: emoji and emoji shortcodes in
+headings, ampersands in headings, non-ASCII headings, the four forbidden Unicode ranges
+(Box Drawing, Arrows, Geometric Shapes, Miscellaneous Technical — checked inside code
+fences too, because fenced content still renders), duplicate anchors, table-of-contents
+links that resolve to no heading, the 19 required sections, and Business Analyst Summary
+placement at the top.
+
+Exits non-zero on any error-severity violation. `--no-section-check` checks formatting
+only, for a README that is not meant to follow the full structure.
+
+**Writes:** `readme/lint-report.json`.
+
+## `render`
+
+```
+odin.py render [--renderer mmdc] [--format svg|png|pdf] [--background ...] [--timeout N]
+```
+
+Renders every `graphs/*.mmd` into `graphs/rendered/` using a trusted **local** Mermaid
+renderer. When no renderer is available the command is not an error: it writes
+`graphs/rendered/RENDER_STATUS.json` recording `unavailable` and the reason, and the
+`.mmd` sources — which are canonical — are retained untouched. A per-diagram rendering
+failure is likewise recorded rather than fatal.
 
 ## `log`
 

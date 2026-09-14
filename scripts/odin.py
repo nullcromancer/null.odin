@@ -224,6 +224,39 @@ TOOL_PROBES = [
 ]
 
 
+# Environment-variable disclosure policy. The protocol permits values only for
+# demonstrably non-sensitive variables, so the default is to record the name and
+# withhold the value. A packet is meant to be shareable; the operator's identity,
+# home directory and installed-software inventory are not part of the evidence.
+SENSITIVE_ENV_MARKERS = (
+    "TOKEN", "SECRET", "PASSWORD", "PASSWD", "PWD", "KEY", "CREDENTIAL",
+    "AUTH", "SESSION", "COOKIE", "PRIVATE", "LICENSE", "API", "PROXY",
+    "ACCOUNT", "USER", "LOGIN", "MAIL", "SIGNATURE", "CERT",
+)
+
+PATH_LIKE_ENV = frozenset({
+    "PATH", "PYTHONPATH", "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "CLASSPATH",
+    "GOPATH", "NODE_PATH", "PSMODULEPATH", "MANPATH", "PKG_CONFIG_PATH",
+})
+
+LOCATION_ENV = frozenset({
+    "HOME", "USERPROFILE", "HOMEPATH", "HOMEDRIVE", "TEMP", "TMP", "TMPDIR",
+    "APPDATA", "LOCALAPPDATA", "PROGRAMFILES", "PROGRAMDATA", "GOROOT",
+    "JAVA_HOME", "CARGO_HOME", "RUSTUP_HOME", "VIRTUAL_ENV", "CONDA_PREFIX",
+    "SHELL", "COMSPEC", "PWD", "OLDPWD", "XDG_CACHE_HOME", "XDG_CONFIG_HOME",
+    "CODEX_HOME", "ODIN_HOME", "ODIN_ARTIFACT_ROOT",
+})
+
+# Values that describe the build/runtime posture and identify nobody.
+SAFE_VALUE_ENV = frozenset({
+    "TZ", "LANG", "LC_ALL", "LC_CTYPE", "OS", "PROCESSOR_ARCHITECTURE",
+    "NUMBER_OF_PROCESSORS", "CI", "SOURCE_DATE_EPOCH", "PYTHONHASHSEED",
+    "PYTHONIOENCODING", "PYTHONDONTWRITEBYTECODE", "UMASK", "NODE_ENV",
+    "NODE_OPTIONS", "RUSTFLAGS", "CFLAGS", "CXXFLAGS", "MAKEFLAGS",
+    "GOFLAGS", "GOPROXY", "GONOSUMDB", "GOARCH", "GOOS", "TERM",
+})
+
+
 def cmd_env(args):
     from odin_lib.common import run
 
@@ -237,20 +270,19 @@ def cmd_env(args):
         else:
             unavailable[name] = "exit {}".format(code) if code != 127 else "not installed"
 
-    sensitive = ("TOKEN", "SECRET", "PASSWORD", "PASSWD", "KEY", "CREDENTIAL",
-                 "AUTH", "SESSION", "COOKIE", "PRIVATE", "LICENSE_KEY", "API")
     env_report = {}
     for key in sorted(os.environ):
         upper = key.upper()
-        if any(marker in upper for marker in sensitive):
-            env_report[key] = "<REDACTED>"
-        elif upper in ("PATH", "PYTHONPATH", "LD_LIBRARY_PATH", "CLASSPATH", "GOPATH",
-                       "GOROOT", "JAVA_HOME", "CARGO_HOME", "RUSTUP_HOME", "NODE_PATH",
-                       "VIRTUAL_ENV", "CONDA_PREFIX", "NODE_OPTIONS", "NODE_ENV",
-                       "TZ", "LANG", "LC_ALL", "HOME", "USERPROFILE", "TEMP", "TMP",
-                       "TMPDIR", "SHELL", "COMSPEC", "OS", "PROCESSOR_ARCHITECTURE",
-                       "CI", "SOURCE_DATE_EPOCH", "PYTHONHASHSEED", "UMASK",
-                       "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"):
+        if any(marker in upper for marker in SENSITIVE_ENV_MARKERS):
+            env_report[key] = "<REDACTED: name matches a sensitive pattern>"
+        elif upper in PATH_LIKE_ENV:
+            # Path lists identify the operator and enumerate installed software.
+            # Keep the shape, which is analytically useful; drop the content.
+            entries = [e for e in os.environ[key].split(os.pathsep) if e]
+            env_report[key] = "<REDACTED: path list, {} entries>".format(len(entries))
+        elif upper in LOCATION_ENV:
+            env_report[key] = "<REDACTED: operator-identifying location>"
+        elif upper in SAFE_VALUE_ENV:
             env_report[key] = os.environ[key]
 
     report = {
@@ -265,9 +297,20 @@ def cmd_env(args):
         "tools_available": dict(sorted(available.items())),
         "tools_unavailable": dict(sorted(unavailable.items())),
         "environment_variables_sanitized": env_report,
-        "environment_variable_policy": "names influencing builds are listed; values "
-                                       "appear only for demonstrably non-sensitive "
-                                       "variables, otherwise <REDACTED>",
+        "environment_variable_policy": {
+            "rule": "Names influencing the build are listed. Values appear only for "
+                    "demonstrably non-sensitive variables; everything else is redacted.",
+            "redaction_classes": {
+                "sensitive-name": "name matches a credential-shaped pattern",
+                "path-list": "value withheld; entry count retained because the shape "
+                             "is analytically useful and the content identifies the "
+                             "operator and their installed software",
+                "operator-identifying location": "home, temp and toolchain directories "
+                                                 "withheld; they contain the username",
+            },
+            "note": "Packets are meant to be shareable. No operator-identifying value "
+                    "is written here.",
+        },
     }
     write_json(state.packet_root / "inventory" / "environment.json", report)
     return {
@@ -439,6 +482,103 @@ def cmd_docstub(args):
 # --------------------------------------------------------------------------
 # action manifest
 # --------------------------------------------------------------------------
+
+def cmd_readme_scan(args):
+    from odin_lib import readme as readme_lib
+
+    state = State.load(args.artifacts)
+    report = readme_lib.scan(state)
+    return {
+        "repository_shape": report["repository_shape"],
+        "languages_ranked": [l["language"] for l in report["languages_ranked"][:8]],
+        "ecosystems_detected": sorted(report["ecosystems_detected"]),
+        "components_proposed": len(report["components_proposed"]),
+        "entrypoints": sorted(report["entrypoints"]),
+        "ci": sorted(report["ci"]),
+        "containers_and_iac": sorted(report["containers_and_iac"]),
+        "test_frameworks": report["tests"]["frameworks_detected"],
+        "absences": {k: v for k, v in report["absences"].items() if v is True},
+        "output": "readme/component-map.json",
+    }
+
+
+def cmd_readme_lint(args):
+    from odin_lib import readme as readme_lib
+
+    target = Path(args.path).expanduser()
+    if not target.is_file():
+        raise OdinError("no README at " + str(target))
+    report = readme_lib.lint(
+        target.read_text(encoding="utf-8", errors="replace"),
+        path_label=str(target),
+        require_sections=not args.no_section_check)
+    if args.artifacts is not None or not args.no_write:
+        try:
+            state = State.load(args.artifacts)
+            write_json(state.packet_root / "readme" / "lint-report.json", report)
+            report["output"] = "readme/lint-report.json"
+        except OdinError:
+            pass
+    report.pop("headings", None)
+    return report
+
+
+def cmd_render(args):
+    """Render graphs/*.mmd with a trusted local Mermaid renderer, if one exists."""
+    from odin_lib.common import run
+
+    state = State.load(args.artifacts)
+    graphs = state.packet_root / "graphs"
+    rendered = graphs / "rendered"
+    rendered.mkdir(parents=True, exist_ok=True)
+    sources = sorted(graphs.glob("*.mmd"), key=lambda p: str(p).encode())
+
+    renderer = args.renderer or "mmdc"
+    code, out, err = run([renderer, "--version"], timeout=60)
+    if code != 0:
+        report = {
+            "status": "unavailable",
+            "renderer": renderer,
+            "reason": "no trusted local Mermaid renderer found ({}). The .mmd sources "
+                      "are the canonical representation and are retained; "
+                      "graphs/rendered/ stays empty.".format(err.strip() or "exit %d" % code),
+            "diagrams_found": len(sources),
+            "rendered": [],
+        }
+        write_json(rendered / "RENDER_STATUS.json", report)
+        return report
+
+    version = (out or err).strip().splitlines()[0].strip()
+    ok, failed = [], []
+    for source in sources:
+        target = rendered / (source.stem + "." + args.format)
+        # Renderers may fetch remote fonts/themes; keep it local and deterministic.
+        code, out, err = run(
+            [renderer, "-i", str(source), "-o", str(target), "-b", args.background],
+            timeout=args.timeout)
+        if code == 0 and target.is_file():
+            ok.append({"source": "graphs/" + source.name,
+                       "output": "graphs/rendered/" + target.name,
+                       "sha256": sha256_file(target)})
+        else:
+            failed.append({"source": "graphs/" + source.name,
+                           "exit_code": code,
+                           "error": (err or out).strip()[:500]})
+
+    report = {
+        "status": "rendered" if not failed else "partial",
+        "renderer": renderer,
+        "renderer_version": version,
+        "format": args.format,
+        "diagrams_found": len(sources),
+        "rendered": ok,
+        "failed": failed,
+        "note": "Mermaid .mmd source remains canonical. A rendering failure is a "
+                "recorded non-blocking error, never a reason to drop a diagram.",
+    }
+    write_json(rendered / "RENDER_STATUS.json", report)
+    return report
+
 
 def cmd_log(args):
     state = State.load(args.artifacts)
@@ -615,6 +755,30 @@ def build_parser():
     p.add_argument("--overwrite", action="store_true",
                    help="replace existing per-file documents (default: keep them)")
     p.set_defaults(func=cmd_docstub)
+
+    p = sub.add_parser("readme-scan",
+                       help="sweep the inventory for repository-README evidence")
+    add_common(p)
+    p.set_defaults(func=cmd_readme_scan)
+
+    p = sub.add_parser("readme-lint",
+                       help="enforce the README formatting constraints")
+    add_common(p)
+    p.add_argument("--path", default="README.md", help="README to check (default: ./README.md)")
+    p.add_argument("--no-section-check", action="store_true",
+                   help="check formatting only; skip the required-section check")
+    p.add_argument("--no-write", action="store_true",
+                   help="do not write readme/lint-report.json into the packet")
+    p.set_defaults(func=cmd_readme_lint)
+
+    p = sub.add_parser("render", help="render graphs/*.mmd with a local Mermaid renderer")
+    add_common(p)
+    p.add_argument("--renderer", help="renderer executable (default: mmdc)")
+    p.add_argument("--format", default="svg", choices=["svg", "png", "pdf"])
+    p.add_argument("--background", default="transparent",
+                   help="background passed to the renderer (default: transparent)")
+    p.add_argument("--timeout", type=int, default=120)
+    p.set_defaults(func=cmd_render)
 
     p = sub.add_parser("log", help="append a record to ACTION_MANIFEST.json")
     add_common(p)

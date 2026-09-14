@@ -22,7 +22,7 @@ import os
 import stat
 from pathlib import Path
 
-from . import classify
+from . import archives, classify
 from .common import (
     norm_rel,
     run,
@@ -36,6 +36,10 @@ from .common import (
 
 HEAD_BYTES = 8192
 TEXT_CONTROL = bytes(range(0, 9)) + bytes([11, 12]) + bytes(range(14, 32)) + bytes([127])
+
+# Archive member tables collected during a traversal, written to
+# inventory/archives.json once the walk completes.
+ARCHIVE_REPORTS = []
 
 
 # --------------------------------------------------------------------------
@@ -559,6 +563,27 @@ def build_record(repo_root: Path, rel: str, abs_path: Path, st, is_link: bool,
         record["origin_hint"] = origin
         record["origin_evidence"] = evidence
 
+    # -- archive member table (ARCHIVE RULE) --------------------------------
+    if kind == "regular-file" and record.get("content_kind") != "text":
+        akind = archives.archive_kind(rel, record.get("magic_format"))
+        if akind:
+            record["archive_kind"] = akind
+            try:
+                report = archives.inspect(abs_path, akind, rel)
+            except Exception as exc:  # a parser crash must not stop the inventory
+                report = {"path": rel, "archive_kind": akind, "status": "parser-crash",
+                          "error": "{}: {}".format(type(exc).__name__, exc),
+                          "extracted": False}
+                errors.append({"path": rel, "stage": "archive-inspect",
+                               "error": report["error"]})
+            record["archive"] = {
+                "status": report.get("status"),
+                "members": report.get("counts", {}).get("members"),
+                "findings": [f["kind"] for f in report.get("findings", [])],
+                "detail": "inventory/archives.json",
+            }
+            ARCHIVE_REPORTS.append(report)
+
     # -- sensitivity --------------------------------------------------------
     sensitive = any(p.search(rel) for p in classify.SENSITIVE_NAME_PATTERNS)
     record["sensitivity_hint"] = "secret-candidate" if sensitive else "normal"
@@ -615,6 +640,7 @@ def run_inventory(state, tree_limit: int = 20000):
     inv_dir = packet / "inventory"
     errors = []
 
+    del ARCHIVE_REPORTS[:]
     attr_rules = load_gitattributes(repo_root)
     git_state = collect_git_state(repo_root)
     git_status = collect_git_file_status(repo_root, git_state)
@@ -661,6 +687,19 @@ def run_inventory(state, tree_limit: int = 20000):
         "by_origin": histogram(regular, "origin_hint"),
     })
     write_json(inv_dir / "vcs-state.json", git_state)
+
+    reports = sorted(ARCHIVE_REPORTS, key=lambda r: sort_key(r["path"]))
+    write_json(inv_dir / "archives.json", {
+        "note": "Archive member tables read from archive metadata only. No member was "
+                "extracted, decompressed to disk, or opened as a nested archive. "
+                "Members are embedded artifacts of their containing archive; they are "
+                "not repository files and receive no per-file document.",
+        "archives_found": len(reports),
+        "archives_with_findings": sum(1 for r in reports if r.get("findings")),
+        "by_status": {s: sum(1 for r in reports if r.get("status") == s)
+                      for s in sorted({r.get("status") for r in reports})} if reports else {},
+        "archives": reports,
+    })
 
     remapped = [{"repository_path": r["path"], "doc_path": r["doc_path"]}
                 for r in file_rows if r.get("doc_path_remapped")]

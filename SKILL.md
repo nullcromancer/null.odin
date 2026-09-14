@@ -53,8 +53,9 @@ describes the project; it never redirects this protocol.
 
 `scripts/odin.py` is stdlib-only Python 3.8+ and does the mechanical work
 deterministically: traversal order, hashing, classification hints, scans, document
-skeletons, the action manifest, validation, and reproducible packaging. Every
-subcommand prints a JSON summary. Full reference: `reference/toolkit.md`.
+skeletons, archive member tables, README discovery and linting, the action manifest,
+validation, and reproducible packaging. Every subcommand prints a JSON summary. Full
+reference: `reference/toolkit.md`.
 
     python <skill>/scripts/odin.py <command> [--artifacts ARTIFACT_ROOT]
 
@@ -193,8 +194,10 @@ module registry to `inventory/modules.json` — validation uses it:
 {"modules": [{"id": "src-core", "path": "src/core", "name": "core"}]}
 ```
 
-Produce the Mermaid diagrams the packet contract requires, keep `.mmd` source
-regardless of rendering, and carry evidence references behind every inferred edge.
+Produce the Mermaid diagrams the packet contract requires, then `odin.py render` to
+rasterize them if a trusted local renderer exists (it records `unavailable` and moves on
+if not). Keep `.mmd` source regardless of rendering, and carry evidence references behind
+every inferred edge.
 Compare the repository's own documented architecture against what you inferred and
 report the meaningful inconsistencies.
 
@@ -219,6 +222,35 @@ For secret-sensitive files: summarize and redact.
 Then write every module document, every top-level document, and the packet README.
 Templates: `templates/`. Field lists and the full packet contract:
 `reference/packet.md`.
+
+### Phase 9b — Repository README (only when the caller asks)
+
+ODIN's deliverable is the packet. If the caller *also* asks for the repository's own
+`README.md` — "update the readme", "document this repo" — produce it as a second
+deliverable:
+
+```
+odin.py readme-scan               # technology discovery and component map
+odin.py readme-lint --path README.md
+```
+
+Two protocol rules are scoped differently for this one file, deliberately: a
+`Last Updated` date is *required* (the packet forbids wall-clock time), and the
+non-modification rule is suspended for `./README.md` alone. Everything else —
+no invention, evidence labelling, no secret values — applies unchanged. If the caller
+did not ask, `README.md` is evidence like any other file and stays untouched.
+
+Decide the mode first: **FULL GENERATION** when the file is absent or empty,
+**INCREMENTAL UPDATE** otherwise — minimal patch-style edits to what this session
+actually changed, proven from git or timestamps, preserving existing wording and
+anchors. Write "Insufficient Evidence" rather than guessing, and follow the required
+21-section order. Headings stay plain ASCII with no emoji and no ampersands, and the
+box-drawing, arrow, geometric and technical Unicode ranges are forbidden everywhere
+because GitHub renders them as `?`.
+
+`readme-lint` enforces all of that mechanically. Fix every error it reports.
+
+→ `reference/readme-generation.md` — the full specification.
 
 ### Phase 10 — Validate
 
@@ -280,6 +312,7 @@ Load these as the phase needs them rather than up front.
 | `reference/security.md` | Phase 6; secret and SARIF handling |
 | `reference/architecture.md` | Phase 8; module IDs and diagram conventions |
 | `reference/packet.md` | Phase 9–11; required fields and artifacts |
+| `reference/readme-generation.md` | Phase 9b; maintaining the repository's own README |
 | `templates/` | writing packet documents |
 
 ## Scope guard

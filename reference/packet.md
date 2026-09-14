@@ -27,7 +27,7 @@ findings/
     files.jsonl  directories.jsonl  languages.json  file-types.json  roles.json
     tree.txt  source-hashes.sha256  vcs-state.json
     environment.json  inventory-summary.json  integrity-verification.json
-    modules.json  per-file-documents-required.json
+    modules.json  per-file-documents-required.json  archives.json
 
   modules/    <one document per module>.md
   files/      <one document per physical regular file>.md   (+ _PATH_MAP.json)
@@ -37,6 +37,7 @@ findings/
     sequence-*.mmd  dependencies.mmd
     dependencies.json  symbol-graph.json  call-graph.json  data-flow.json
     rendered/   <SVG/PNG when a trusted local renderer is available>
+                RENDER_STATUS.json  (what was rendered, or why nothing was)
 
   dependencies/
     dependency-graph.json  packages.json  cyclonedx.json  spdx.json
@@ -56,6 +57,10 @@ findings/
 
   sources/
     EXTERNAL_SOURCES.md  external-sources.json
+
+  readme/
+    component-map.json   (technology discovery for repository-README generation)
+    lint-report.json     (README formatting enforcement result)
 
   tool-output/
     <sanitized raw and normalized logs>

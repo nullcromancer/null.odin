@@ -21,8 +21,10 @@ Files and their jobs:
 | `SKILL.md` | entry point and phase plan; keep it short enough to read every run |
 | `PROTOCOL.md` | the normative protocol, content-faithful to the source specification — **do not reword requirements here**; add operational guidance to `reference/` instead |
 | `reference/` | per-phase operational detail, loaded on demand |
+| `reference/readme-generation.md` | the repository-README specification: modes, required sections, formatting constraints |
 | `templates/` | document skeletons for the packet |
 | `scripts/odin.py` + `scripts/odin_lib/` | the stdlib-only toolkit |
+| `tests/test_odin.py` | regression tests for the mechanical guarantees — run `python -m unittest discover -s tests` |
 | `prompts/odin.md` | Codex / generic slash-prompt shim |
 | `install/` | installers for Claude Code and Codex |
 
@@ -33,3 +35,8 @@ writes into REPO_ROOT, never executes repository-controlled code, deterministic 
 If you change what the packet must contain, update all four of: `PROTOCOL.md`'s
 contract section, `reference/packet.md`, `REQUIRED_PACKET_ARTIFACTS` in
 `scripts/odin_lib/verify.py`, and the templates.
+
+**Run the tests before committing.** `python -m unittest discover -s tests` covers the
+promises that are easy to break silently: repository non-modification, deterministic
+ordering, byte-identical packaging, secret redaction, operator privacy, archive-member
+safety, and validation honesty.

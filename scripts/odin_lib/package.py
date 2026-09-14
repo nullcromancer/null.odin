@@ -108,20 +108,25 @@ def build_zip(state, compresslevel: int = 9):
     if zip_path.exists():
         zip_path.unlink()
 
+    # One globally sorted member list, directories and files interleaved. A
+    # directory entry is a bytewise prefix of its children, so sorting naturally
+    # places each directory before its contents.
+    members = sorted(
+        [(rel + "/", True) for rel in dir_members] + [(rel, False) for rel in rels],
+        key=lambda item: sort_key(item[0]))
+
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED,
                          compresslevel=compresslevel) as archive:
-        for rel in dir_members:
-            info = zipfile.ZipInfo(PACKET_DIRNAME + "/" + rel + "/", date_time=FIXED_DOS_TIME)
-            info.external_attr = DIR_ATTR
-            info.create_system = 3  # Unix, so permissions are interpreted consistently
-            archive.writestr(info, b"")
-        for rel in rels:
-            data = (packet / rel).read_bytes()
+        for rel, is_dir in members:
             info = zipfile.ZipInfo(PACKET_DIRNAME + "/" + rel, date_time=FIXED_DOS_TIME)
-            info.external_attr = FILE_ATTR
-            info.create_system = 3
-            info.compress_type = zipfile.ZIP_DEFLATED
-            archive.writestr(info, data)
+            info.create_system = 3  # Unix, so permissions are interpreted consistently
+            if is_dir:
+                info.external_attr = DIR_ATTR
+                archive.writestr(info, b"")
+            else:
+                info.external_attr = FILE_ATTR
+                info.compress_type = zipfile.ZIP_DEFLATED
+                archive.writestr(info, (packet / rel).read_bytes())
 
     result = {
         "zip_path": str(zip_path),
