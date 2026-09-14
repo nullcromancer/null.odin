@@ -88,6 +88,12 @@ EXT_LANG = {
     "v": "Verilog/Coq", "sv": "SystemVerilog", "vhd": "VHDL", "vhdl": "VHDL",
     "cu": "CUDA", "cuh": "CUDA header", "cl": "OpenCL",
     "sol": "Solidity", "move": "Move", "cairo": "Cairo",
+    "gleam": "Gleam", "odin": "Odin", "roc": "Roc", "gr": "Grain",
+    "sml": "Standard ML", "ml4": "OCaml Camlp4 syntax extension",
+    "agda": "Agda", "idr": "Idris", "lean": "Lean",
+    "wat": "WebAssembly text", "bal": "Ballerina", "vale": "Vale",
+    "pony": "Pony", "chpl": "Chapel", "fut": "Futhark",
+    "mojo": "Mojo", "bend": "Bend",
     # scripting / dynamic
     "py": "Python", "pyi": "Python stub", "pyw": "Python", "pyx": "Cython",
     "pxd": "Cython", "ipynb": "Jupyter notebook",
@@ -101,6 +107,7 @@ EXT_LANG = {
     "sh": "Shell", "bash": "Bash", "zsh": "Zsh", "fish": "Fish", "ksh": "Ksh",
     "bat": "Batch", "cmd": "Batch", "awk": "AWK", "sed": "sed script",
     "vim": "Vim script", "nu": "Nushell",
+    "janet": "Janet", "fnl": "Fennel",
     # web
     "js": "JavaScript", "mjs": "JavaScript (ESM)", "cjs": "JavaScript (CJS)",
     "jsx": "JavaScript JSX", "ts": "TypeScript", "tsx": "TypeScript TSX",
@@ -137,6 +144,7 @@ EXT_LANG = {
     "targets": "MSBuild targets", "nuspec": "NuGet spec",
     "podspec": "CocoaPods spec", "pbxproj": "Xcode project",
     "sbt": "sbt build", "cabal": "Cabal", "opam": "OPAM",
+    "spec": "RPM spec",
     # templates
     "j2": "Jinja2 template", "jinja": "Jinja2 template", "jinja2": "Jinja2 template",
     "tmpl": "Template", "tpl": "Template", "mustache": "Mustache",
