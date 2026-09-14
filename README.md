@@ -13,11 +13,11 @@
 - **Operational impact.** The repository being analysed is never modified: a cryptographic baseline is taken before work starts and re-checked afterwards (`scripts/odin_lib/verify.py:90`). Nothing is uploaded anywhere.
 - **Key risk control.** Credentials found during analysis are never written into the output and are never tested against any service (`scripts/odin_lib/scan.py:295`). This is enforced by automated tests, not just policy.
 - **Assurance.** ODIN has been run against itself. The resulting packet is the evidence base for this README, and it reports ODIN's own remaining shortcomings alongside its strengths.
-- **Maturity.** Working and tested (68 automated tests, all passing), but with no continuous integration, so the tests do not run automatically when the code changes.
+- **Maturity.** Working and tested (69 automated tests, all passing), running automatically on every change through continuous integration (`.github/workflows/tests.yml`).
 
 ## Technical Summary
 
-- **Shape.** A portable agent-skill directory: protocol documents plus a standard-library Python toolkit. Not an application, library or service. 34 project files across 8 modules (`inventory/modules.json` in the produced packet).
+- **Shape.** A portable agent-skill directory: protocol documents plus a standard-library Python toolkit. Not an application, library or service. 35 project files across 9 modules (`inventory/modules.json` in the produced packet).
 - **Runtimes.** Python 3.8 or newer, standard library only. Verified, not merely claimed: all 115 import statements resolve against `sys.stdlib_module_names` (`scripts/odin_lib/`, 11 Python files).
 - **No build system.** No compilation, no package manifest, no lockfile. Installation is a directory copy (`install/install.ps1`, `install/install.sh`).
 - **Two layers.** Prose defines the protocol (`PROTOCOL.md` is normative and binding; `SKILL.md` is the operating procedure; `reference/` holds nine documents loaded on demand). Code implements only the mechanical parts (`scripts/odin.py`, 16 subcommands over 8 library modules).
@@ -26,8 +26,8 @@
 - **Security model.** Three controls are enforced in code rather than documentation: an artifact root inside the repository is refused (`scripts/odin.py:65`); secret values are replaced by irreversible fingerprints (`scripts/odin_lib/scan.py:295`); operator-identifying environment values are withheld by class (`scripts/odin.py:260`).
 - **Archive safety.** Archive member tables are read from metadata and never extracted, with detection for path traversal, symlink escape, decompression-bomb ratios and nested archives (`scripts/odin_lib/archives.py:167`).
 - **Determinism.** Bytewise path ordering, sorted-key JSON, LF endings, no wall-clock time in packet content, and fixed-timestamp archive members. Repackaging identical content is byte-identical (`scripts/odin_lib/package.py:86`).
-- **Testing.** 68 tests in 14 classes, standard-library `unittest`, driving the real CLI against throwaway fixture repositories (`tests/test_odin.py`).
-- **CI/CD.** None. No workflow files exist anywhere in the repository.
+- **Testing.** 69 tests in 14 classes, standard-library `unittest`, driving the real CLI against throwaway fixture repositories (`tests/test_odin.py`).
+- **CI/CD.** GitHub Actions (`.github/workflows/tests.yml`): the suite across three operating systems and Python 3.8 through 3.13, plus a job that runs ODIN against this repository and asserts the guarantees end to end.
 - **Observability.** Every subcommand prints a JSON summary to stdout; every material action is appended to `ACTION_MANIFEST.json` with a monotonic sequence number. There is no logging framework, no metrics and no tracing.
 - **Where to start.** Read `SKILL.md` for the phase plan, then `scripts/odin.py` for the CLI surface, then `scripts/odin_lib/inventory.py:338` for the traversal that everything else builds on.
 - **Where to start (contributors).** `AGENTS.md` states the invariants; run `python -m unittest discover -s tests` before committing.
@@ -39,7 +39,7 @@ Deterministic repository forensics. Analyse one repository read-only, produce a 
 ## Last Updated
 
 - **Last Updated:** 2026-09-13
-- **Last Commit Date:** 2026-09-13T21:11:33-04:00, commit `d31f573` on `main` (`inventory/vcs-state.json`, from a read-only `git log`)
+- **Last Commit Date:** 2026-09-13T21:34:07-04:00, commit `395723a` on `main` (`inventory/vcs-state.json`, from a read-only `git log`)
 
 ## Table of Contents
 
@@ -97,14 +97,14 @@ ODIN has been run against its own source. Every figure below comes from that pac
 
 | Measure | Result |
 | --- | --- |
-| Files inventoried | 98 regular files (34 project files, 64 Git internals) across 59 directories |
-| Modules documented | 8 |
-| Symbols indexed | 293, via the native CPython `ast`, 0 parse errors |
+| Files inventoried | 119 regular files (35 project files, 84 Git internals) across 79 directories |
+| Modules documented | 9 |
+| Symbols indexed | 294, via the native CPython `ast`, 0 parse errors |
 | Third-party dependencies | 0, verified against `sys.stdlib_module_names` |
-| Tests | 68 discovered, 68 passed, 0 failed, 0 skipped |
+| Tests | 69 discovered, 69 passed, 0 failed, 0 skipped |
 | Coverage | not measured, which is not zero percent |
 | Security findings | 2 Low, 1 Informational, 1 Low disclosure; 2 previously-reported Medium findings resolved |
-| Repository integrity after the run | PASS, all 98 files re-hashed identically |
+| Repository integrity after the run | PASS, all 119 files re-hashed identically |
 | Packaging | byte-identical across consecutive runs, demonstrated and regression-tested |
 
 ## Components
@@ -116,7 +116,8 @@ ODIN has been run against its own source. Every figure below comes from that pac
 | templates | Documentation | Markdown | copied when writing packet records | `templates/` | Skeletons for per-file, per-module and top-level documents |
 | scripts-cli | CLI tool | Python (argparse) | CPython 3.8+ | `scripts/odin.py` | Sixteen subcommands; run-state lifecycle, environment policy, rendering, doc stubs, action log |
 | scripts-lib | Library | Python | CPython 3.8+ | `scripts/odin_lib/` | Eight standard-library modules implementing the mechanical protocol requirements |
-| tests | Test suite | Python `unittest` | CPython 3.8+ | `tests/` | 68 regression tests protecting the guarantees |
+| tests | Test suite | Python `unittest` | CPython 3.8+ | `tests/` | 69 regression tests protecting the guarantees |
+| ci | CI/CD | GitHub Actions YAML | GitHub-hosted runners | `.github/` | Runs the suite on every change and asserts the guarantees end to end |
 | prompts | Configuration | Markdown with frontmatter | Codex slash prompt | `prompts/` | `/odin` prompt shim with an installer-substituted path |
 | install | Build/tooling | PowerShell, POSIX shell | Windows, macOS, Linux | `install/` | Copy the skill into the Claude Code and Codex skill directories |
 
@@ -136,7 +137,7 @@ graph TD
     ref["reference/ - 9 phase documents"]
     cli["scripts/odin.py - 16 subcommands"]
     lib["scripts/odin_lib/ - 8 modules"]
-    tests["tests/ - 68 regression tests"]
+    tests["tests/ - 69 regression tests"]
   end
 
   repo[("REPO_ROOT - read-only evidence")]
@@ -235,7 +236,10 @@ Optional external tools, each degrading cleanly when absent:
       - verify.py             integrity verification and packet validation
       - package.py            manifest and deterministic packaging
   - tests/
-    - test_odin.py            68 tests across 14 classes
+    - test_odin.py            69 tests across 14 classes
+  - .github/
+    - workflows/
+      - tests.yml           CI: the suite plus end-to-end guarantee assertions
   - prompts/
     - odin.md                 Codex slash-prompt shim
   - install/
@@ -315,11 +319,16 @@ Every subcommand prints a JSON summary to stdout and exits non-zero when its own
 
 ## Deployment and CI/CD
 
-**No CI/CD exists.** There are no workflow files, no pipeline definitions, no build scripts beyond the two installers, and no container or infrastructure-as-code artifacts anywhere in the repository (OBSERVED absence across the full inventory).
+**CI:** GitHub Actions, defined in `.github/workflows/tests.yml`, triggered on push to `main`, on pull request, and manually. It runs with read-only permissions and uses no secrets.
 
-Deployment is a directory copy performed by `install/install.ps1` or `install/install.sh`.
+| Job | What it does |
+| --- | --- |
+| `tests` | The suite across ubuntu, windows and macos, on Python 3.8, 3.9, 3.10, 3.12 and 3.13. The 3.8 leg is pinned to ubuntu-22.04 because ubuntu-24.04 no longer provides it, and exists specifically to keep the "Python 3.8+" claim honest. Also fails if a dependency manifest ever appears, which would break the standard-library-only invariant |
+| `guarantees` | Runs ODIN against this repository and asserts the promises directly: the repository is unchanged afterwards, no bytecode cache is written into it, packaging is byte-identical across two runs, no operator value reaches the packet, and the README satisfies its formatting contract |
 
-This is a known gap: the 68 tests protect guarantees that are easy to break silently, and nothing runs them automatically on change.
+The second job matters more than it looks. These guarantees fail *silently* when they regress: nothing errors, output just quietly stops being deterministic or stops being redacted. Asserting them on every change is the only way to notice.
+
+**Deployment** is a directory copy performed by `install/install.ps1` or `install/install.sh`. There are no containers, no infrastructure-as-code artifacts and no release pipeline (OBSERVED absence).
 
 ## Deep Code Reference
 
@@ -386,6 +395,7 @@ There is no HTTP or RPC surface. The public interface is the CLI.
 | Operator identity never reaches the packet | four-class environment policy, `scripts/odin.py:260` | `TestOperatorPrivacy` |
 | Archives are never extracted | metadata-only member tables, `scripts/odin_lib/archives.py:167` | `TestArchiveInspection` |
 | Unmeasured coverage cannot carry a number | `scripts/odin_lib/verify.py:427` | `TestValidation` |
+| No bytecode cache is written into the repository | `sys.dont_write_bytecode` set before the library imports, `scripts/odin.py` | `TestNonModification` |
 
 **Known findings from self-analysis:**
 
@@ -418,7 +428,7 @@ Sequence numbers are used instead of timestamps so that packet content stays rep
 
 | Task | Command |
 | --- | --- |
-| Run the tests | `python -m unittest discover -s tests` |
+| Run the tests | `python -m unittest discover -s tests` (CI runs the same command) |
 | Check run progress | `python scripts/odin.py status` |
 | See why validation failed | `python scripts/odin.py validate`, then read `VALIDATION.json` |
 | Confirm the repository was untouched | `python scripts/odin.py verify` |
@@ -445,7 +455,7 @@ Read `AGENTS.md` first; it states the invariants.
 - Never execute repository-controlled code
 - Deterministic output: sorted keys, bytewise path ordering, LF endings, no wall-clock time in packet content
 
-**Before committing:** run `python -m unittest discover -s tests`. The suite covers the promises that are easy to break silently.
+**Before committing:** run `python -m unittest discover -s tests`. The suite covers the promises that are easy to break silently. CI runs the same suite on every push and pull request, plus end-to-end guarantee assertions.
 
 **If you change what the packet must contain,** update all four of: the contract section of `PROTOCOL.md`, `reference/packet.md`, `REQUIRED_PACKET_ARTIFACTS` in `scripts/odin_lib/verify.py`, and the templates.
 

@@ -157,6 +157,30 @@ class TestNonModification(FixtureCase):
         self.assertIn("NEW.txt", out["added"])
         self.assertIn("README.md", out["removed"])
 
+    def test_toolkit_writes_no_bytecode_into_the_repository(self):
+        """The toolkit may live inside the repository it analyses.
+
+        Importing odin_lib would normally drop __pycache__ next to the source,
+        which the protocol forbids: caches must never be written into REPO_ROOT.
+        """
+        toolkit = self.repo / "vendored-skill" / "scripts"
+        toolkit.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(SCRIPTS, toolkit)
+        for stale in toolkit.rglob("__pycache__"):
+            shutil.rmtree(stale, ignore_errors=True)
+
+        artifacts = self.tmp / "artifacts-vendored"
+        proc = subprocess.run(
+            [sys.executable, str(toolkit / "odin.py"), "init",
+             "--repo", str(self.repo), "--artifacts", str(artifacts)],
+            capture_output=True, text=True, timeout=300)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
+        polluted = sorted(str(p.relative_to(self.repo).as_posix())
+                          for p in self.repo.rglob("__pycache__"))
+        self.assertEqual(polluted, [],
+                         "the toolkit wrote bytecode caches into REPO_ROOT: %r" % polluted)
+
     def test_artifact_root_inside_the_repository_is_refused(self):
         code, out = run_odin("init", "--repo", str(self.repo),
                              "--artifacts", str(self.repo / "findings-out"))

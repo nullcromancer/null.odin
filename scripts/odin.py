@@ -32,6 +32,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+# The protocol forbids writing caches into REPO_ROOT. When the toolkit lives
+# inside the repository under analysis — self-analysis, or any checkout that
+# vendors this skill — importing odin_lib would otherwise drop __pycache__
+# directories next to the source. Set before the odin_lib imports below, which
+# are what would trigger bytecode writing.
+sys.dont_write_bytecode = True
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from odin_lib import package as packaging  # noqa: E402
