@@ -365,7 +365,7 @@ def _check_coverage_claims(packet: Path):
         return {"status": "absent",
                 "note": "tests/coverage-summary.json is missing; it must exist and state "
                         "explicitly whether coverage was measured."}
-    if "measured" not in data:
+    if "measured" not in data or not isinstance(data.get("measured"), bool):
         return {"status": "invalid",
                 "note": "coverage-summary.json must carry a boolean \"measured\" field so "
                         "'not measured' is never confused with zero percent."}
@@ -376,6 +376,12 @@ def _check_coverage_claims(packet: Path):
                     "note": "coverage is declared unmeasured but numeric coverage keys are present",
                     "offending_keys": sorted(set(offenders))}
         return {"status": "ok", "measured": False}
+    figures = [(key, value) for key, value in _walk_items(data)
+               if PERCENT_KEYS.search(key) and isinstance(value, (int, float))
+               and not isinstance(value, bool)]
+    if not figures:
+        return {"status": "invalid",
+                "note": "coverage is declared measured but no numeric coverage figure is present"}
     return {"status": "ok", "measured": True,
             "tool": data.get("tool"), "note": "numeric coverage is permitted because "
                                               "measurement is declared"}
@@ -389,6 +395,17 @@ def _walk_keys(obj, prefix=""):
     elif isinstance(obj, list):
         for item in obj:
             yield from _walk_keys(item, prefix)
+
+
+def _walk_items(obj, prefix=""):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            path = prefix + str(key)
+            yield path, value
+            yield from _walk_items(value, path + ".")
+    elif isinstance(obj, list):
+        for item in obj:
+            yield from _walk_items(item, prefix)
 
 
 def _check_action_manifest(packet: Path):

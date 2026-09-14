@@ -626,6 +626,70 @@ class TestArchiveInventoryIntegration(FixtureCase):
 
 
 # --------------------------------------------------------------------------
+# measured coverage
+# --------------------------------------------------------------------------
+
+class TestCoverage(FixtureCase):
+
+    def test_coverage_help_works(self):
+        proc = subprocess.run(
+            [sys.executable, str(ODIN), "coverage", "--help"],
+            capture_output=True, text=True, timeout=30)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("stdlib trace", proc.stdout)
+
+    def test_coverage_is_policy_blocked_without_a_sandbox(self):
+        before = self.tree_hashes(self.repo)
+        self.init(sandbox="none")
+        code, out = run_odin(
+            "coverage", "--artifacts", str(self.artifacts), "src/app.py")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["status"], "blocked_by_policy")
+
+        summary = json.loads(
+            (self.packet / "tests" / "coverage-summary.json").read_text(encoding="utf-8"))
+        self.assertIs(summary["measured"], False)
+        self.assertNotIn("line_percent", summary)
+        manifest = json.loads(
+            (self.packet / "ACTION_MANIFEST.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["actions"][-1]["status"], "blocked_by_policy")
+        self.assertIs(manifest["actions"][-1]["repo_code_executed"], False)
+        self.assertEqual(before, self.tree_hashes(self.repo))
+
+        from odin_lib import verify
+        state = common.State.load(str(self.artifacts))
+        self.assertEqual(verify.validate(state)["coverage_claims"]["status"], "ok")
+
+    def test_declared_sandbox_produces_measured_line_coverage(self):
+        write(self.repo / "tests" / "test_app.py",
+              "import unittest\n\n"
+              "class PassingTest(unittest.TestCase):\n"
+              "    def test_true(self):\n"
+              "        self.assertTrue(True)\n")
+        before = self.tree_hashes(self.repo)
+        self.init(sandbox="platform-sandbox fixture")
+        code, out = run_odin(
+            "coverage", "--artifacts", str(self.artifacts),
+            "--module", "unittest", "discover", "-s", "tests")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(out["status"], "measured")
+        self.assertIs(out["measured"], True)
+        self.assertGreater(out["line_total"], 0)
+        self.assertGreaterEqual(out["line_percent"], 0.0)
+        self.assertLessEqual(out["line_percent"], 100.0)
+        self.assertTrue(out["files"])
+        self.assertEqual(out["target"], {"kind": "module", "value": "unittest"})
+        self.assertTrue(any((self.packet / rel).is_file()
+                            for rel in out["native_artifacts"]))
+        self.assertEqual(before, self.tree_hashes(self.repo))
+
+        manifest = json.loads(
+            (self.packet / "ACTION_MANIFEST.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["actions"][-1]["status"], "succeeded")
+        self.assertIs(manifest["actions"][-1]["repo_code_executed"], True)
+
+
+# --------------------------------------------------------------------------
 # validation honesty
 # --------------------------------------------------------------------------
 
@@ -663,6 +727,16 @@ class TestValidation(FixtureCase):
         run_odin("inventory", artifacts=self.artifacts)
         (self.packet / "tests").mkdir(parents=True, exist_ok=True)
         write(self.packet / "tests" / "coverage-summary.json", '{"line_percent": 92.4}\n')
+        from odin_lib import verify
+        state = common.State.load(str(self.artifacts))
+        report = verify.validate(state)
+        self.assertEqual(report["coverage_claims"]["status"], "invalid")
+
+    def test_measured_coverage_needs_a_numeric_figure(self):
+        self.init()
+        run_odin("inventory", artifacts=self.artifacts)
+        (self.packet / "tests").mkdir(parents=True, exist_ok=True)
+        write(self.packet / "tests" / "coverage-summary.json", '{"measured": true}\n')
         from odin_lib import verify
         state = common.State.load(str(self.artifacts))
         report = verify.validate(state)

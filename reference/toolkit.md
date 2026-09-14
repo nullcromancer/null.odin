@@ -133,6 +133,41 @@ mechanical fields pre-filled from inventory evidence and the analytic fields mar
 Stubs are a starting point, never a deliverable: `validate` fails while any marker
 remains.
 
+## `coverage`
+
+```
+odin.py coverage [--artifacts ARTIFACT_ROOT] [--module] [--timeout N]
+                 TARGET [TARGET_ARGUMENTS ...]
+```
+
+Measures Python line coverage with the standard-library `trace` module. `TARGET` is
+either a repository-relative Python script or, with `--module`, a module such as
+`unittest`. Put ODIN options before `TARGET`; everything after `TARGET` is passed to
+the target. Example:
+
+```
+odin.py coverage --artifacts "$ODIN_ARTIFACT_ROOT" --module unittest discover -s tests
+```
+
+Coverage is dynamic execution, so the command first reads the sandbox declaration
+saved by `init`. With `--sandbox none`, it executes nothing, writes
+`tests/coverage-summary.json` with `measured: false`, and appends a
+`blocked_by_policy` action. This is an honest, validation-safe unmeasured result.
+
+With a sandbox declared, the command copies the complete repository to
+`scratch/coverage-worktree`, redirects Python bytecode and process temp/home paths to
+scratch, runs the target there, and kills its process tree after `--timeout` seconds
+(default 300). The declaration does not create a sandbox; the operator remains
+responsible for establishing the boundary described in `reference/sandbox.md`.
+
+Successful measurement writes aggregate and per-file line totals and percentages to
+`tests/coverage-summary.json`, native annotated `.cover` files under
+`tests/coverage/`, and sanitized target output to `tool-output/coverage.log`. It
+records the action automatically. A nonzero target exit is recorded as `failed`, but
+coverage gathered before the failure remains measured evidence. A timeout or a run
+that records no repository Python lines stays `measured: false`; no percentage is
+invented. `trace` does not measure branch coverage, and the summary says so explicitly.
+
 ## `readme-scan`
 
 Sweeps the inventory for the evidence a repository README must be built from: ranked
