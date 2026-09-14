@@ -39,7 +39,7 @@ Deterministic repository forensics. Analyse one repository read-only, produce a 
 ## Last Updated
 
 - **Last Updated:** 2026-09-13
-- **Last Commit Date:** 2026-09-13T21:34:07-04:00, commit `395723a` on `main` (`inventory/vcs-state.json`, from a read-only `git log`)
+- **Last Commit Date:** 2026-09-13T21:35:47-04:00, commit `336fd1a` on `main` (`inventory/vcs-state.json`, from a read-only `git log`)
 
 ## Table of Contents
 
@@ -97,14 +97,14 @@ ODIN has been run against its own source. Every figure below comes from that pac
 
 | Measure | Result |
 | --- | --- |
-| Files inventoried | 119 regular files (35 project files, 84 Git internals) across 79 directories |
+| Files inventoried | 136 regular files (35 project files, 101 Git internals) across 93 directories |
 | Modules documented | 9 |
-| Symbols indexed | 294, via the native CPython `ast`, 0 parse errors |
+| Symbols indexed | 295, via the native CPython `ast`, 0 parse errors |
 | Third-party dependencies | 0, verified against `sys.stdlib_module_names` |
-| Tests | 69 discovered, 69 passed, 0 failed, 0 skipped |
+| Tests | 69 discovered, 69 passed, 0 failed, 0 skipped, green on all 8 CI legs |
 | Coverage | not measured, which is not zero percent |
 | Security findings | 2 Low, 1 Informational, 1 Low disclosure; 2 previously-reported Medium findings resolved |
-| Repository integrity after the run | PASS, all 119 files re-hashed identically |
+| Repository integrity after the run | PASS, all 136 files re-hashed identically |
 | Packaging | byte-identical across consecutive runs, demonstrated and regression-tested |
 
 ## Components
