@@ -11,6 +11,7 @@ read the result without re-deriving it.
     python odin.py todos
     python odin.py secrets
     python odin.py docstub
+    python odin.py coverage [--module] <target> [arguments ...]
     python odin.py log --phase P --action-id A --status S --tool T --command "..."
     python odin.py verify
     python odin.py validate
@@ -345,6 +346,17 @@ def cmd_secrets(args):
     return scan.scan_secrets(State.load(args.artifacts))
 
 
+def cmd_coverage(args):
+    from odin_lib import coverage as coverage_lib
+
+    state = State.load(args.artifacts)
+    result, action = coverage_lib.measure(
+        state, module=args.module, target=args.target,
+        target_args=args.target_args, timeout=args.timeout)
+    _append_actions(state, [action])
+    return result
+
+
 # --------------------------------------------------------------------------
 # docstub
 # --------------------------------------------------------------------------
@@ -587,43 +599,38 @@ def cmd_render(args):
     return report
 
 
-def cmd_log(args):
-    state = State.load(args.artifacts)
+def _append_actions(state, records, defaults=None):
+    defaults = defaults or {}
     manifest_path = state.packet_root / "ACTION_MANIFEST.json"
     manifest = read_json(manifest_path) or {
         "schema": "odin.action-manifest/1", "actions": []}
-
-    records = []
-    if args.from_json:
-        payload = json.loads(Path(args.from_json).read_text(encoding="utf-8"))
-        records = payload if isinstance(payload, list) else [payload]
-    else:
-        records = [{}]
-
     written = []
     for base in records:
         record = {
             "seq": state.next_seq(),
-            "phase": base.get("phase", args.phase),
-            "action_id": base.get("action_id", args.action_id),
-            "status": base.get("status", args.status),
-            "tool": base.get("tool", args.tool),
-            "tool_version": base.get("tool_version", args.tool_version),
-            "runtime_version": base.get("runtime_version", args.runtime_version),
-            "working_directory": base.get("working_directory", args.cwd),
-            "command": base.get("command", args.command),
-            "input_scope": base.get("input_scope", args.input_scope),
-            "output_paths": base.get("output_paths", args.output or []),
-            "sandbox": base.get("sandbox", args.sandbox or state.data.get("sandbox")),
-            "network": base.get("network", args.network or state.data.get("network_policy")),
+            "phase": base.get("phase", defaults.get("phase")),
+            "action_id": base.get("action_id", defaults.get("action_id")),
+            "status": base.get("status", defaults.get("status")),
+            "tool": base.get("tool", defaults.get("tool")),
+            "tool_version": base.get("tool_version", defaults.get("tool_version")),
+            "runtime_version": base.get("runtime_version", defaults.get("runtime_version")),
+            "working_directory": base.get("working_directory",
+                                          defaults.get("working_directory")),
+            "command": base.get("command", defaults.get("command")),
+            "input_scope": base.get("input_scope", defaults.get("input_scope")),
+            "output_paths": base.get("output_paths", defaults.get("output_paths", [])),
+            "sandbox": base.get("sandbox", defaults.get(
+                "sandbox", state.data.get("sandbox"))),
+            "network": base.get("network", defaults.get(
+                "network", state.data.get("network_policy"))),
             "repo_code_executed": base.get("repo_code_executed",
-                                           bool(args.repo_code_executed)),
-            "exit_code": base.get("exit_code", args.exit_code),
-            "termination": base.get("termination", args.termination),
-            "log_path": base.get("log_path", args.log_path),
-            "reason": base.get("reason", args.reason),
-            "evidence": base.get("evidence", args.evidence or []),
-            "assumptions": base.get("assumptions", args.assumption or []),
+                                           defaults.get("repo_code_executed", False)),
+            "exit_code": base.get("exit_code", defaults.get("exit_code")),
+            "termination": base.get("termination", defaults.get("termination")),
+            "log_path": base.get("log_path", defaults.get("log_path")),
+            "reason": base.get("reason", defaults.get("reason")),
+            "evidence": base.get("evidence", defaults.get("evidence", [])),
+            "assumptions": base.get("assumptions", defaults.get("assumptions", [])),
         }
         if record["log_path"]:
             candidate = state.packet_root / record["log_path"]
@@ -640,6 +647,37 @@ def cmd_log(args):
 
     write_json(manifest_path, manifest)
     return {"recorded": written, "actions_total": len(manifest["actions"])}
+
+
+def cmd_log(args):
+    state = State.load(args.artifacts)
+    if args.from_json:
+        payload = json.loads(Path(args.from_json).read_text(encoding="utf-8"))
+        records = payload if isinstance(payload, list) else [payload]
+    else:
+        records = [{}]
+    defaults = {
+        "phase": args.phase,
+        "action_id": args.action_id,
+        "status": args.status,
+        "tool": args.tool,
+        "tool_version": args.tool_version,
+        "runtime_version": args.runtime_version,
+        "working_directory": args.cwd,
+        "command": args.command,
+        "input_scope": args.input_scope,
+        "output_paths": args.output or [],
+        "sandbox": args.sandbox or state.data.get("sandbox"),
+        "network": args.network or state.data.get("network_policy"),
+        "repo_code_executed": bool(args.repo_code_executed),
+        "exit_code": args.exit_code,
+        "termination": args.termination,
+        "log_path": args.log_path,
+        "reason": args.reason,
+        "evidence": args.evidence or [],
+        "assumptions": args.assumption or [],
+    }
+    return _append_actions(state, records, defaults)
 
 
 # --------------------------------------------------------------------------
@@ -762,6 +800,21 @@ def build_parser():
     p.add_argument("--overwrite", action="store_true",
                    help="replace existing per-file documents (default: keep them)")
     p.set_defaults(func=cmd_docstub)
+
+    p = sub.add_parser(
+        "coverage",
+        help="measure Python line coverage with the stdlib trace module",
+        description="Measure Python line coverage with the stdlib trace module in a "
+                    "declared sandbox and disposable repository copy.")
+    add_common(p)
+    p.add_argument("--module", action="store_true",
+                   help="run target as a Python module instead of a repository-relative script")
+    p.add_argument("--timeout", type=int, default=300,
+                   help="kill the coverage process tree after N seconds (default: 300)")
+    p.add_argument("target", help="repository-relative Python script, or module with --module")
+    p.add_argument("target_args", nargs=argparse.REMAINDER,
+                   help="arguments passed to target; use -- before option-shaped arguments")
+    p.set_defaults(func=cmd_coverage)
 
     p = sub.add_parser("readme-scan",
                        help="sweep the inventory for repository-README evidence")
