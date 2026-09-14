@@ -13,7 +13,7 @@
 - **Operational impact.** The repository being analysed is never modified: a cryptographic baseline is taken before work starts and re-checked afterwards (`scripts/odin_lib/verify.py:90`). Nothing is uploaded anywhere.
 - **Key risk control.** Credentials found during analysis are never written into the output and are never tested against any service (`scripts/odin_lib/scan.py:295`). This is enforced by automated tests, not just policy.
 - **Assurance.** ODIN has been run against itself. The resulting packet is the evidence base for this README, and it reports ODIN's own remaining shortcomings alongside its strengths.
-- **Maturity.** Working and tested (69 automated tests, all passing), running automatically on every change through continuous integration (`.github/workflows/tests.yml`).
+- **Maturity.** Working and tested: 69 automated tests, all passing, run locally as the gate on every change.
 
 ## Technical Summary
 
@@ -27,7 +27,7 @@
 - **Archive safety.** Archive member tables are read from metadata and never extracted, with detection for path traversal, symlink escape, decompression-bomb ratios and nested archives (`scripts/odin_lib/archives.py:167`).
 - **Determinism.** Bytewise path ordering, sorted-key JSON, LF endings, no wall-clock time in packet content, and fixed-timestamp archive members. Repackaging identical content is byte-identical (`scripts/odin_lib/package.py:86`).
 - **Testing.** 69 tests in 14 classes, standard-library `unittest`, driving the real CLI against throwaway fixture repositories (`tests/test_odin.py`).
-- **CI/CD.** GitHub Actions (`.github/workflows/tests.yml`): the suite across three operating systems and Python 3.8 through 3.13, plus a job that runs ODIN against this repository and asserts the guarantees end to end.
+- **CI/CD.** A GitHub Actions workflow exists (`.github/workflows/tests.yml`) but its results are not treated as evidence. The local suite is the contract: `python -m unittest discover -s tests`.
 - **Observability.** Every subcommand prints a JSON summary to stdout; every material action is appended to `ACTION_MANIFEST.json` with a monotonic sequence number. There is no logging framework, no metrics and no tracing.
 - **Where to start.** Read `SKILL.md` for the phase plan, then `scripts/odin.py` for the CLI surface, then `scripts/odin_lib/inventory.py:338` for the traversal that everything else builds on.
 - **Where to start (contributors).** `AGENTS.md` states the invariants; run `python -m unittest discover -s tests` before committing.
@@ -101,7 +101,7 @@ ODIN has been run against its own source. Every figure below comes from that pac
 | Modules documented | 9 |
 | Symbols indexed | 295, via the native CPython `ast`, 0 parse errors |
 | Third-party dependencies | 0, verified against `sys.stdlib_module_names` |
-| Tests | 69 discovered, 69 passed, 0 failed, 0 skipped, green on all 8 CI legs |
+| Tests | 69 discovered, 69 passed, 0 failed, 0 skipped |
 | Coverage | not measured, which is not zero percent |
 | Security findings | 2 Low, 1 Informational, 1 Low disclosure; 2 previously-reported Medium findings resolved |
 | Repository integrity after the run | PASS, all 136 files re-hashed identically |
