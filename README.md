@@ -467,4 +467,4 @@ Read `AGENTS.md` first; it states the invariants.
 
 MIT. See `LICENSE`.
 
-Copyright (c) 2026 Demanus.
+Copyright (c) 2026 nullcromancer.
