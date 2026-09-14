@@ -69,12 +69,14 @@ jobs:
           python-version: "3.13"
 
       - name: Run ODIN against this repository
+        # GITHUB_ENV only takes effect in *later* steps, so the artifact root is
+        # exported for this step and written to GITHUB_ENV for the rest.
         run: |
           set -euo pipefail
-          ART="${RUNNER_TEMP}/odin-ci"
-          python scripts/odin.py init --repo "${GITHUB_WORKSPACE}" --artifacts "$ART" \
-            --network denied --sandbox none
-          echo "ODIN_ARTIFACT_ROOT=$ART" >> "$GITHUB_ENV"
+          export ODIN_ARTIFACT_ROOT="${RUNNER_TEMP}/odin-ci"
+          echo "ODIN_ARTIFACT_ROOT=${ODIN_ARTIFACT_ROOT}" >> "$GITHUB_ENV"
+          python scripts/odin.py init --repo "${GITHUB_WORKSPACE}" \
+            --artifacts "$ODIN_ARTIFACT_ROOT" --network denied --sandbox none
           python scripts/odin.py env
           python scripts/odin.py inventory
           python scripts/odin.py todos
