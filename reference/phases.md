@@ -1,10 +1,10 @@
-# Phase plan — entry and exit criteria
+# Phase plan: entry and exit criteria
 
 One table row per phase. A phase is done when its exit criteria hold, not when it
-stops producing output. Phases 1–8 are independent enough that a failure in one does
+stops producing output. Phases 1-8 are independent enough that a failure in one does
 not block the others; run what you can and record the rest.
 
-## Phase 0 — Establish the run
+## Phase 0: Establish the run
 
 **Entry:** REPO_ROOT is readable.
 
@@ -25,7 +25,7 @@ not block the others; run what you can and record the rest.
 a permission boundary, a junction, or a mount stopped the walk. Do not proceed on a
 truncated inventory without recording it as a limitation.
 
-## Phase 1 — Classification review
+## Phase 1: Classification review
 
 **Entry:** inventory exists.
 
@@ -36,7 +36,7 @@ generated on evidence rather than convention alone.
 **Exit:** every regular file has a primary classification you are willing to defend,
 with alternatives preserved wherever signals disagreed.
 
-## Phase 2 — Static semantic analysis
+## Phase 2: Static semantic analysis
 
 **Entry:** classification review done for the languages you are about to parse.
 
@@ -50,7 +50,7 @@ parse failure recorded with parser, version and error.
 **Trap:** claiming resolved types from a lexical pass. If Tree-sitter or Ctags produced
 the data, the confidence is structural, not semantic.
 
-## Phase 3 — Unfinished work
+## Phase 3: Unfinished work
 
 **Entry:** inventory exists.
 
@@ -62,7 +62,7 @@ migration placeholders, feature flags that gate incomplete functionality.
 `TODOS_AND_UNFINISHED_WORK.md` written, with actionable work separated from historical
 comments, generated/vendored occurrences and deliberate fixtures.
 
-## Phase 4 — Build, configuration and runtime inference
+## Phase 4: Build, configuration and runtime inference
 
 **Entry:** inventory and classification.
 
@@ -74,7 +74,7 @@ and deployment.
 carries an evidence label; unexecuted commands marked `UNVERIFIED`; conflicts between
 README, CI and build configuration reported rather than silently resolved.
 
-## Phase 5 — Dependencies and SBOM
+## Phase 5: Dependencies and SBOM
 
 **Entry:** manifests and lockfiles located.
 
@@ -84,7 +84,7 @@ explicit statement that it is unresolved, constraint, scope, direct/transitive s
 provenance and confidence; unresolvable external artifacts (unfetched submodules, LFS
 objects, missing packages) recorded as unresolved, never guessed.
 
-## Phase 6 — Security
+## Phase 6: Security
 
 **Entry:** inventory; static analysis where available.
 
@@ -95,22 +95,22 @@ objects, missing packages) recorded as unresolved, never guessed.
 anywhere in the packet; every finding carries normalized severity, the scanner's
 original severity, confidence and provenance.
 
-## Phase 7 — Dynamic analysis
+## Phase 7: Dynamic analysis
 
 **Entry:** an adequate sandbox exists **and** you have statically inspected the
 commands you intend to run.
 
-**Exit — with a sandbox:** `tests/results.json`, `TEST_INVENTORY.md`, `failures.md`,
+**Exit: with a sandbox:** `tests/results.json`, `TEST_INVENTORY.md`, `failures.md`,
 `coverage-summary.json` (with `"measured": true|false`), coverage artifacts if
 measured, and manifest entries describing sandbox type, network mode and whether
 repository-controlled code could execute.
 
-**Exit — without a sandbox:** the same documents exist and state plainly that dynamic
+**Exit: without a sandbox:** the same documents exist and state plainly that dynamic
 evidence is unavailable and why; `coverage-summary.json` carries `"measured": false`
 and no numeric percentage; every skipped command is a `blocked_by_policy` or
 `unavailable` manifest entry.
 
-## Phase 8 — Architecture and diagrams
+## Phase 8: Architecture and diagrams
 
 **Entry:** Phases 2 and 4.
 
@@ -118,7 +118,7 @@ and no numeric percentage; every skipped command is a `blocked_by_policy` or
 Mermaid diagrams plus at least one sequence diagram; documented-versus-inferred
 architecture compared.
 
-## Phase 9 — Documentation
+## Phase 9: Documentation
 
 **Entry:** everything you intend to document has been analyzed.
 
@@ -131,23 +131,23 @@ in the packet.
 
 **Trap:** large repositories. Document in deterministic path order, in batches, and
 check progress with `odin.py status`. Vendored and generated trees get short,
-metadata-level records — short is fine, absent is not.
+metadata-level records: short is fine, absent is not.
 
-## Phase 10 — Validate
+## Phase 10: Validate
 
 **Do:** `odin.py verify`, then `odin.py validate`; fix and repeat.
 
 **Exit:** integrity `PASS`; validation `PASS`, or every remaining gap explicitly
 documented in `ERRORS.md` and `ASSUMPTIONS_AND_LIMITATIONS.md` with a reason.
 
-## Phase 11 — Package
+## Phase 11: Package
 
 **Do:** `odin.py manifest`, then `odin.py package`.
 
 **Exit:** `findings.zip` exists at ARTIFACT_ROOT, reopens cleanly, contains every
 required top-level document, and its archived bytes match `MANIFEST.sha256`.
 
-## Phase 12 — Respond
+## Phase 12: Respond
 
 **Exit:** the completion summary from `SKILL.md` Phase 12, and nothing else. The
 message is not a substitute for the packet.

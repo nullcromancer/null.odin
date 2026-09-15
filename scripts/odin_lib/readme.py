@@ -336,8 +336,7 @@ FORBIDDEN_RANGES = [
 ]
 
 REQUIRED_SECTIONS = [
-    "Business Analyst Summary",
-    "Technical Summary",
+    "The Rundown",
     "Last Updated",
     "Table of Contents",
     "Repository Overview",
@@ -354,6 +353,7 @@ REQUIRED_SECTIONS = [
     "Security Notes",
     "Observability and Monitoring",
     "Common Tasks and Troubleshooting",
+    "Change Log",
     "Contributing",
 ]
 
@@ -390,6 +390,14 @@ def lint(text: str, path_label: str = "README.md", require_sections: bool = True
     lines = text.split("\n")
     violations = []
     headings = []
+
+    for ch, name in (("\u2014", "em dash"), ("\u2013", "en dash")):
+        if ch in text:
+            violations.append({
+                "rule": "prose-dash", "severity": "error",
+                "detail": name + " found in generated README",
+                "fix": "use a comma, colon, period, parentheses, or plain hyphen instead",
+            })
 
     in_fence = False
     fence_marker = None
@@ -498,11 +506,11 @@ def lint(text: str, path_label: str = "README.md", require_sections: bool = True
             })
 
         top = [h["title"].lower() for h in headings[:4]]
-        if headings and not any("business analyst summary" in t for t in top):
+        if headings and not any("the rundown" in t for t in top):
             violations.append({
                 "rule": "section-order", "severity": "error",
-                "detail": "Business Analyst Summary must be at the very top",
-                "fix": "BA Summary first, Technical Summary immediately after",
+                "detail": "The Rundown must be at the very top",
+                "fix": "put The Rundown immediately after the project identity header",
             })
 
     errors = [v for v in violations if v["severity"] == "error"]

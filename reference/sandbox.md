@@ -1,4 +1,4 @@
-# Dynamic execution — boundary and playbooks
+# Dynamic execution: boundary and playbooks
 
 Static inspection is always permitted. Everything below concerns running
 repository-controlled code: project code, tests, package hooks, build scripts,
@@ -26,7 +26,7 @@ one.
 
 ## Isolation checklist
 
-- Original repository exposed read-only, or a complete disposable copy — including the
+- Original repository exposed read-only, or a complete disposable copy: including the
   hidden and untracked files the project needs.
 - All output, caches and dependencies under disposable scratch storage.
 - Non-root/unprivileged user where supported.
@@ -50,7 +50,7 @@ under the policy, that is a documented blocker, not a reason to open the sandbox
 
 `HOME`, `TMP`/`TEMP`/`TMPDIR`, every language and package cache, compiler output,
 coverage output, Python bytecode (`PYTHONPYCACHEPREFIX`), the Rust target directory,
-.NET artifacts, CMake build directories, test temp directories — all into scratch.
+.NET artifacts, CMake build directories, test temp directories: all into scratch.
 `odin.py init` creates `scratch/`, `scratch/home/` and `scratch/tmp/` for this.
 
 ## Dependency installation
@@ -79,44 +79,44 @@ A preference order, not a permission to run something unsafe:
 
 Detect what the repository actually uses before reaching for any of the commands
 below. Prefer pinned wrappers and the repository's own CI invocations over generic
-ones. Do not install a global tool merely because this document names it — use an
+ones. Do not install a global tool merely because this document names it: use an
 existing trusted or pinned tool, or record the capability as unavailable.
 
 ## Per-ecosystem safe patterns
 
-**Python** — redirect `PYTHONPYCACHEPREFIX`; `python -m compileall` against the
+**Python**: redirect `PYTHONPYCACHEPREFIX`; `python -m compileall` against the
 disposable copy; the repository's configured type checker (mypy/pyright); the
 repository's configured linter in non-fixing mode (`ruff check` without `--fix`,
 `pylint`); `pytest --collect-only`; `pytest`; the coverage tool the project already
 declares.
 
-**JavaScript/TypeScript** — use the package manager the lockfile implies; use
+**JavaScript/TypeScript**: use the package manager the lockfile implies; use
 repo-local/pinned binaries rather than implicit `npx` downloads; install from
 lockfile/cache with install scripts disabled first (`npm ci --ignore-scripts`);
 `tsc --noEmit` when compatible with the repository's config; ESLint in non-fixing
 mode; the repository test script only after reading the package scripts.
 
-**Go** — resolve and list modules offline first (`GOFLAGS=-mod=mod GOPROXY=off go list
+**Go**: resolve and list modules offline first (`GOFLAGS=-mod=mod GOPROXY=off go list
 ./...`); `go vet ./...` where compatible; `go test ./...`; `go test -coverprofile=...`
 into scratch.
 
-**Rust** — `cargo metadata --locked --offline`; `cargo check --locked --offline`;
+**Rust**: `cargo metadata --locked --offline`; `cargo check --locked --offline`;
 `cargo clippy --locked --offline` with no `--fix`; `cargo test --locked --offline`;
 `CARGO_TARGET_DIR` in scratch.
 
-**JVM** — prefer `./mvnw` or `./gradlew` when supplied; offline mode when dependencies
+**JVM**: prefer `./mvnw` or `./gradlew` when supplied; offline mode when dependencies
 are local (`-o`, `--offline`); run the relevant test/check tasks; never deploy or
 publish.
 
-**.NET** — use the declared SDK/toolchain (`global.json`); avoid implicit remote
+**.NET**: use the declared SDK/toolchain (`global.json`); avoid implicit remote
 restore when network is denied; artifacts to scratch; `dotnet build`/`dotnet test`
 with `--no-restore` once dependencies are present.
 
-**C/C++** — out-of-tree build directories in scratch; the repository's actual build
+**C/C++**: out-of-tree build directories in scratch; the repository's actual build
 system; export and consume compile commands when supported; compiler diagnostics and
 the analyzers the project declares; run tests from the scratch build output.
 
-**Other ecosystems** — identify the official package/build/test tooling and apply the
+**Other ecosystems**: identify the official package/build/test tooling and apply the
 same shape: locked, offline, no-fix, scratch output.
 
 ## Test execution rules

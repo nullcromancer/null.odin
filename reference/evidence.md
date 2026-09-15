@@ -34,7 +34,7 @@ protocol's fixed scale: `Confirmed` | `High` | `Medium` | `Low`.
 
 When evidence conflicts:
 
-1. Report the conflict explicitly — in the file or module record and, if it matters to
+1. Report the conflict explicitly: in the file or module record and, if it matters to
    the reader's decisions, in `EXECUTIVE_SUMMARY.md`.
 2. Cite all of the conflicting evidence with locations.
 3. Choose the conclusion the strongest applicable evidence supports.
@@ -62,8 +62,8 @@ The deterministic order used for file format and language, strongest first:
 | E9 | successful Tree-sitter or equivalent parser recognition |
 | E10 | deterministic content heuristic |
 
-`odin.py inventory` applies E1–E7 and E10. E8 and E9 are yours, during static analysis
-— and they are the only rules that let you *upgrade* a classification's confidence
+`odin.py inventory` applies E1-E7 and E10. E8 and E9 are yours, during static analysis
+- and they are the only rules that let you *upgrade* a classification's confidence
 from structural to semantic.
 
 ## Fallback ladders
@@ -105,7 +105,7 @@ reported as unavailable.
 
 ## Nondeterminism
 
-If two runs could legitimately differ — a nondeterministic test, a timestamp-embedding
+If two runs could legitimately differ: a nondeterministic test, a timestamp-embedding
 generator, a randomized algorithm, parallel execution, a network-dependent resolution
-step — do not hide it. Document the source, capture the result you observed, record
+step: do not hide it. Document the source, capture the result you observed, record
 known seeds and options, and classify the reproduction accordingly in `REPRODUCE.md`.

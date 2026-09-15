@@ -68,7 +68,7 @@ findings/
 
 ## Per-file documents
 
-`files/<repository-relative-path>.md` — every physical regular file, including binary,
+`files/<repository-relative-path>.md`: every physical regular file, including binary,
 generated, vendored, cache and VCS-internal ones. For those, describe metadata,
 format, provenance, references and role; do not invent source-level semantics.
 Secret-sensitive files are summarized and redacted.
@@ -84,7 +84,7 @@ Measured coverage when attributable and available · TODO/unfinished-work findin
 Related files/modules · Evidence class and confidence · Parse/tool errors ·
 Limitations/unknowns
 
-Where a field genuinely does not apply — "key symbols" for a PNG — say so explicitly.
+Where a field genuinely does not apply: "key symbols" for a PNG: say so explicitly.
 "Not applicable: binary image asset with no source-level symbols" is a complete answer.
 A blank is not.
 
@@ -136,7 +136,7 @@ the archived bytes after building the ZIP.
 
 Sorted member order; normalized member paths; stable generated-file timestamps
 (1980-01-01T00:00:00Z); stable permissions; fixed compression. The ZIP contains the
-`findings/` directory and nothing else — **not** the repository source, dependency
+`findings/` directory and nothing else: **not** the repository source, dependency
 caches, build trees, secret values, private credentials or sandbox state.
 
 After creation: compute the SHA-256, verify the archive opens, verify the required
@@ -146,24 +146,24 @@ top-level documents are present, and verify `MANIFEST.sha256` against the member
 
 `odin.py validate` mechanizes most of this; the judgment items are yours.
 
-1. **Inventory completeness** — one inventory record per physical regular file, one
+1. **Inventory completeness**: one inventory record per physical regular file, one
    document per physical regular file, one document per module. *(mechanized)*
-2. **Source integrity** — recomputed hashes match the baseline; VCS state unchanged;
+2. **Source integrity**: recomputed hashes match the baseline; VCS state unchanged;
    any discrepancy reported prominently. *(mechanized via `odin.py verify`)*
-3. **Privacy** — no unredacted secret anywhere in the packet; finding metadata
+3. **Privacy**: no unredacted secret anywhere in the packet; finding metadata
    preserved; no credentials copied in unnecessarily. *(mechanized)*
-4. **Structure** — JSON/JSONL parses; SARIF validated where a validator exists;
+4. **Structure**: JSON/JSONL parses; SARIF validated where a validator exists;
    CycloneDX/SPDX validated where validators exist; Mermaid syntax-checked or
-   rendered; internal Markdown links resolve. *(partly mechanized — run real SARIF and
+   rendered; internal Markdown links resolve. *(partly mechanized: run real SARIF and
    SBOM validators when available)*
-5. **Evidence** — every high-impact conclusion cites repository or tool evidence;
+5. **Evidence**: every high-impact conclusion cites repository or tool evidence;
    inferred claims are labeled; dynamic claims distinguish observed behavior from
    unexecuted inference. *(judgment)*
-6. **Tests/coverage** — no numeric coverage that was not measured; "not measured"
+6. **Tests/coverage**: no numeric coverage that was not measured; "not measured"
    clearly distinguished from zero percent. *(mechanized)*
-7. **Manifest** — succeeded, failed, skipped, unavailable and policy-blocked actions
+7. **Manifest**: succeeded, failed, skipped, unavailable and policy-blocked actions
    all present; tool versions and exact sanitized commands included. *(mechanized)*
-8. **Integrity** — `MANIFEST.sha256` generated over all packet files except itself and
+8. **Integrity**: `MANIFEST.sha256` generated over all packet files except itself and
    verified once before packaging. *(mechanized)*
 
 ## Partial packets

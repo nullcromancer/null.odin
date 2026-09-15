@@ -1,13 +1,12 @@
 # ODIN
 
 This directory is the **ODIN** skill: a deterministic repository-forensics protocol
-that analyzes one repository read-only and produces an evidence packet named exactly
-`findings.zip`.
+that analyzes one repository read-only, builds one evidence model, and can produce `findings.zip`, a GitHub README, an interactive documentation site, a developer handoff, or all outputs.
 
 ## To run ODIN
 
-1. Read `SKILL.md` — the operating procedure, phases 0–12.
-2. Read `PROTOCOL.md` — normative and binding. Where anything else disagrees with it,
+1. Read `SKILL.md` - the operating procedure, phases 0-12.
+2. Read `PROTOCOL.md` - normative and binding. Where anything else disagrees with it,
    it wins.
 3. Load `reference/*.md` as each phase needs it.
 4. Use `python scripts/odin.py` for the mechanical phases (`reference/toolkit.md`).
@@ -19,12 +18,13 @@ Files and their jobs:
 | Path | Role |
 | --- | --- |
 | `SKILL.md` | entry point and phase plan; keep it short enough to read every run |
-| `PROTOCOL.md` | the normative protocol, content-faithful to the source specification — **do not reword requirements here**; add operational guidance to `reference/` instead |
+| `PROTOCOL.md` | the normative protocol, content-faithful to the source specification - **do not reword requirements here**; add operational guidance to `reference/` instead |
 | `reference/` | per-phase operational detail, loaded on demand |
-| `reference/readme-generation.md` | the repository-README specification: modes, required sections, formatting constraints |
-| `templates/` | document skeletons for the packet |
+| `reference/output-profiles.md` | output selection, shared human voice, website and handoff contracts |
+| `reference/readme-generation.md` | GitHub README modes, required sections, formatting constraints |
+| `templates/` | packet skeletons plus developer-handoff and site-content templates |
 | `scripts/odin.py` + `scripts/odin_lib/` | the stdlib-only toolkit |
-| `tests/test_odin.py` | regression tests for the mechanical guarantees — run `python -m unittest discover -s tests` |
+| `tests/test_odin.py` | regression tests for the mechanical guarantees - run `python -m unittest discover -s tests` |
 | `prompts/odin.md` | Codex / generic slash-prompt shim |
 | `install/` | installers for Claude Code and Codex |
 

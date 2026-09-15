@@ -1,51 +1,58 @@
 <div align="center">
-<img src="reference/odin.png" alt="ODIN" width="300">
-</div>
-
-## Business Analyst Summary
-
-- **What it does.** ODIN takes one software repository and produces a single, self-contained evidence packet named `findings.zip` that describes the whole thing: what the code is, how it is built and run, what it depends on, what security issues it has, what is tested, and what is unfinished (`SKILL.md`, `PROTOCOL.md`).
-- **Who uses it.** Engineers, auditors and reviewers who need a defensible written record of a codebase they did not write. It runs as a skill inside an AI coding assistant (Claude Code or Codex) or as a plain command-line tool (`install/install.ps1`, `install/install.sh`).
-- **Key workflow.** Point it at a repository. It inventories every file, analyses the code, documents every file and module, records security and dependency findings, then packages everything with integrity hashes. Twelve ordered phases, from setup to final packaging (`SKILL.md`).
-- **Second workflow.** On request it also writes and maintains a repository's own `README.md` as a wiki-style document for business and technical readers (`reference/readme-generation.md`).
-- **Key data concepts.** *Evidence packet* (the deliverable), *evidence class* (how strongly each claim is supported), *action manifest* (a log of everything attempted or deliberately skipped), and *inventory* (one record per physical file).
-- **Integrations.** None required. It works entirely offline with no accounts, no services and no third-party software (`dependencies/packages.json` in any produced packet). Git and a diagram renderer are used if present and skipped cleanly if not.
-- **Operational impact.** The repository being analysed is never modified: a cryptographic baseline is taken before work starts and re-checked afterwards (`scripts/odin_lib/verify.py:90`). Nothing is uploaded anywhere.
-- **Key risk control.** Credentials found during analysis are never written into the output and are never tested against any service (`scripts/odin_lib/scan.py:295`). This is enforced by automated tests, not just policy.
-- **Assurance.** ODIN has been run against itself. The resulting packet is the evidence base for this README, and it reports ODIN's own remaining shortcomings alongside its strengths.
-- **Maturity.** Working and tested: 69 automated tests, all passing, run locally as the gate on every change.
-
-## Technical Summary
-
-- **Shape.** A portable agent-skill directory: protocol documents plus a standard-library Python toolkit. Not an application, library or service. 35 project files across 9 modules (`inventory/modules.json` in the produced packet).
-- **Runtimes.** Python 3.8 or newer, standard library only. Verified, not merely claimed: all 115 import statements resolve against `sys.stdlib_module_names` (`scripts/odin_lib/`, 11 Python files).
-- **No build system.** No compilation, no package manifest, no lockfile. Installation is a directory copy (`install/install.ps1`, `install/install.sh`).
-- **Two layers.** Prose defines the protocol (`PROTOCOL.md` is normative and binding; `SKILL.md` is the operating procedure; `reference/` holds nine documents loaded on demand). Code implements only the mechanical parts (`scripts/odin.py`, 16 subcommands over 8 library modules).
-- **Hosting model.** None. Single-threaded, sequential, no network code path anywhere, no ports, no listeners, no datastores.
-- **Data layer.** None. State is one JSON run-state file plus a generated packet tree, both outside the analysed repository.
-- **Security model.** Three controls are enforced in code rather than documentation: an artifact root inside the repository is refused (`scripts/odin.py:65`); secret values are replaced by irreversible fingerprints (`scripts/odin_lib/scan.py:295`); operator-identifying environment values are withheld by class (`scripts/odin.py:260`).
-- **Archive safety.** Archive member tables are read from metadata and never extracted, with detection for path traversal, symlink escape, decompression-bomb ratios and nested archives (`scripts/odin_lib/archives.py:167`).
-- **Determinism.** Bytewise path ordering, sorted-key JSON, LF endings, no wall-clock time in packet content, and fixed-timestamp archive members. Repackaging identical content is byte-identical (`scripts/odin_lib/package.py:86`).
-- **Testing.** 69 tests in 14 classes, standard-library `unittest`, driving the real CLI against throwaway fixture repositories (`tests/test_odin.py`).
-- **CI/CD.** A GitHub Actions workflow exists (`.github/workflows/tests.yml`) but its results are not treated as evidence. The local suite is the contract: `python -m unittest discover -s tests`.
-- **Observability.** Every subcommand prints a JSON summary to stdout; every material action is appended to `ACTION_MANIFEST.json` with a monotonic sequence number. There is no logging framework, no metrics and no tracing.
-- **Where to start.** Read `SKILL.md` for the phase plan, then `scripts/odin.py` for the CLI surface, then `scripts/odin_lib/inventory.py:338` for the traversal that everything else builds on.
-- **Where to start (contributors).** `AGENTS.md` states the invariants; run `python -m unittest discover -s tests` before committing.
+<img src="reference/logo.png" alt="ODIN" width="300">
 
 # ODIN
 
-Deterministic repository forensics. Analyse one repository read-only, produce a reproducible evidence packet named exactly `findings.zip`.
+**Repo forensics for people who would rather know than guess.**
+
+`read everything` · `show your receipts` · `touch nothing` · `package the evidence`
+</div>
+
+> **Heads up:** ODIN can produce the forensic packet, a GitHub README, an interactive documentation site, a developer handoff, or the whole pile. The evidence stays the same. Only the presentation changes.
+
+## The Rundown
+
+ODIN reads a repository like somebody just handed it the keys, a flashlight, and a deeply suspicious attitude.
+
+It walks the whole thing, figures out what is actually there, separates facts from educated guesses, and builds a packet another developer can use without spending three days saying, "Okay, but what does this folder do?"
+
+- **The main job:** point ODIN at one repository and it produces `findings.zip`, a self-contained evidence packet covering the code, build and run paths, dependencies, security findings, tests, architecture, unfinished work, and enough context to make the next person dangerous in a productive way (`SKILL.md`, `PROTOCOL.md`).
+- **Who it is for:** developers, reviewers, auditors, maintainers, and coding CLIs that need to understand a codebase they did not write.
+- **How it works:** phases 0 through 12, in order. Inventory first, analysis second, documentation after that, validation before packaging. No interpretive dance.
+- **Other outputs:** the same evidence can feed three human-facing outputs: a serious GitHub README, an interactive documentation site, and a developer handoff. One scan, several useful ways to read it.
+- **Evidence matters:** ODIN tracks how every claim was learned. Observed code is not the same thing as a comment claiming something exists, and neither is the same thing as an inference.
+- **No service dependency:** it works offline. No accounts. No API keys. No mystery SaaS goblin quietly invoicing you later.
+- **The repo stays clean:** ODIN refuses to put its artifact root inside the repository, hashes the repo before analysis, and checks it again afterward (`scripts/odin_lib/verify.py:90`).
+- **Secrets stay secret:** possible credentials are recorded as redacted findings with fingerprints. Their values are not copied into the packet and ODIN does not try them against anything (`scripts/odin_lib/scan.py:295`).
+- **It eats its own cooking:** ODIN has been run against ODIN. The numbers and limitations in this README come from that packet.
+- **Current test state:** 77 automated tests.
+
+Under the hood, ODIN is deliberately boring in several very useful ways:
+
+- Python 3.8 or newer.
+- Standard library only.
+- No build system.
+- No database.
+- No listener.
+- No network code path.
+- No hidden worker farm.
+- No "works on my laptop" dependency pile.
+- Deterministic output, including byte-identical packaging when the input has not changed.
+
+If you are contributing, start with `SKILL.md`, then `scripts/odin.py`, then `scripts/odin_lib/inventory.py:338`. If you are just trying to understand the project, keep scrolling. That is what this README is for.
 
 ## Last Updated
 
-- **Last Updated:** 2026-09-13
-- **Last Commit Date:** 2026-09-13T21:35:47-04:00, commit `336fd1a` on `main` (`inventory/vcs-state.json`, from a read-only `git log`)
+- **Last Updated:** 2026-09-15
+- **Last Commit Date:** 2026-09-15T00:18:36-04:00, commit `cd968c9` on `main` (from a read-only `git log`)
 
 ## Table of Contents
 
-- [Business Analyst Summary](#business-analyst-summary)
-- [Technical Summary](#technical-summary)
 - [Last Updated](#last-updated)
+- [The Rundown](#the-rundown)
+- [Why ODIN Exists](#why-odin-exists)
+- [Output Profiles](#output-profiles)
+- [Presentation Output Architecture](#presentation-output-architecture)
 - [Repository Overview](#repository-overview)
 - [Components](#components)
 - [Architecture Overview](#architecture-overview)
@@ -60,48 +67,330 @@ Deterministic repository forensics. Analyse one repository read-only, produce a 
 - [Security Notes](#security-notes)
 - [Observability and Monitoring](#observability-and-monitoring)
 - [Common Tasks and Troubleshooting](#common-tasks-and-troubleshooting)
+- [Change Log](#change-log)
 - [Contributing](#contributing)
 - [License](#license)
 
+## Why ODIN Exists
+
+Most project docs are written once, admired briefly, then left in a ditch while the code keeps moving.
+
+ODIN takes the opposite approach. The repository is the evidence. The docs are a view of that evidence. If ODIN cannot prove something, it should say that instead of dressing up a guess in a tie.
+
+The goal is simple: hand a project to someone new and let them answer the questions that normally burn half a week.
+
+- What is this thing actually for?
+- What works right now?
+- Where does execution start?
+- Which parts matter, and which parts are archaeological sediment?
+- What does it depend on?
+- How do I build it, test it, run it, configure it, and deploy it?
+- What talks to what?
+- What is unfinished?
+- Where are the sharp edges?
+- If I have to change something tomorrow morning, where should I start?
+
+The forensic scan and the pretty output are separate on purpose. ODIN learns the project once, keeps the receipts, then formats that knowledge for whoever is reading it.
+
+### The rules ODIN lives by
+
+| Rule | What that means in normal human language |
+| --- | --- |
+| Evidence first | If ODIN says something is true, it should be able to point at why |
+| Analyse once | README, website, handoff, and packet all come from the same evidence model |
+| Keep your hands off the repo | Analysis is read-only unless the user explicitly asks for a repository-facing artifact |
+| Same facts, different audience | A manager and a maintainer may get different explanations, but not different realities |
+| "I don't know" is allowed | `Insufficient Evidence` beats confident nonsense every single time |
+| Docs should help somebody do work | Folder-name karaoke is not documentation |
+
+## Output Profiles
+
+ODIN has four output profiles. The evidence packet is the source material. Everything else is a different way of serving it without changing the facts.
+
+| Profile | Main artifact | Who it is for | What it is supposed to do | Look and feel |
+| --- | --- | --- | --- | --- |
+| Forensic packet | `findings.zip` | auditors, maintainers, agents | Preserve the full reproducible evidence base | plain, precise, boring in the good way |
+| GitHub README | `README.md` | repo visitors and contributors | Explain the whole project without making people spelunk the source first | GitHub-safe nullcromancer terminal vibe |
+| Interactive website | generated site directory | developers, stakeholders, operators | Turn the evidence into something searchable and explorable | black and green project console |
+| Developer handoff | `PROJECT_HANDOFF.md` | the next developer, team, or coding CLI | Transfer ownership without the ritual sacrifice of a week of reverse engineering | portable Markdown, practical first |
+
+You can ask for one, several, or the whole pile.
+
+### GitHub README profile
+
+The README is not supposed to be a glossy pamphlet that says "fast, modern, scalable" and then immediately stops being useful.
+
+It should be the project manual you wish was already there.
+
+When the evidence supports it, ODIN covers:
+
+- **The Rundown**, which mixes the business and technical summary into one readable opening
+- what the project is for and who actually uses it
+- current maturity and what is really implemented
+- architecture and runtime flow
+- projects, modules, services, libraries, frontends, workers, and infrastructure
+- languages, frameworks, runtimes, SDKs, toolchains, and dependencies
+- repository layout, with the paths worth caring about called out
+- entrypoints and startup behavior
+- install, build, run, test, and validation commands
+- configuration, environment variables, and secret handling
+- command, API, route, or other public surfaces
+- persistence and data movement
+- integrations
+- security controls and known limitations
+- logging, metrics, tracing, diagnostics, and other observability
+- deployment and CI/CD
+- TODOs, stubs, dead paths, half-built features, and other unfinished business
+- troubleshooting
+- contribution rules
+- license information when there is a license
+- a sensible "start here" path for somebody new
+
+If a section turns into a phone book, summarize it and tuck the full inventory into something collapsible. People came here to understand the project, not prove they can scroll.
+
+### README identity and theme
+
+Every generated README starts with the project summary and `reference/logo.png`.
+
+GitHub does not let README authors bring their own CSS, because apparently civilization needed at least one guardrail. So the nullcromancer look has to come from things GitHub actually renders:
+
+- `logo.png`
+- terminal-style code blocks
+- compact status tables
+- restrained green badges when badges make sense
+- ASCII-safe diagrams or GitHub Mermaid
+- concise operator-console language
+- strong heading hierarchy
+- no visual trick that makes the README useless in light mode
+
+The README still has to work if somebody ignores the theme entirely.
+
+### Interactive website profile
+
+The website gets to have more fun.
+
+The user picks the implementation language or framework. If they say C# and Blazor, ODIN should not decide that what they really wanted was React because React was feeling lonely.
+
+Useful site features include:
+
+- landing summary with `logo.png`
+- global navigation and search
+- The Rundown
+- architecture and component views
+- repository-tree browsing
+- build, run, test, and install instructions
+- configuration reference
+- command, endpoint, and API reference
+- data-flow and integration views
+- security and observability sections
+- known gaps and unfinished work
+- onboarding guidance
+- links back to source evidence
+- copyable commands and paths
+- responsive layout
+- semantic, accessible HTML
+
+Visually, this is where the full nullcromancer console comes out: black surfaces, green accents, terminal framing, restrained glow, and enough breathing room that nobody needs night-vision goggles to read it.
+
+### Developer handoff profile
+
+`PROJECT_HANDOFF.md` is the "congratulations, this is yours now" document.
+
+It is less about presentation and more about making sure the next person can take over without interrogating the original developer under a desk lamp.
+
+A good handoff explains:
+
+- what the project is and why it exists
+- who or what consumes it
+- what works today
+- what is unfinished, brittle, or risky
+- how the architecture fits together in practical terms
+- what to read first
+- how to configure, build, test, run, debug, and deploy it
+- what external systems matter
+- which parts should not be casually "cleaned up"
+- technical debt and known failure modes
+- conventions and architectural decisions
+- security-sensitive areas
+- operational procedures
+- a useful first-day and first-week orientation
+- what a coding CLI should read before it touches anything
+
+The handoff can point to the forensic packet for proof, but it still has to make sense by itself.
+
+### How ODIN should sound
+
+This applies to generated READMEs, websites, handoffs, and any other human-facing documentation.
+
+Write like an experienced developer explaining the project to another experienced human.
+
+That means:
+
+- casual, direct language
+- contractions are fine
+- a little dry humor is encouraged
+- technical details stay exact
+- commands, paths, versions, security findings, and limitations do not get cute
+- explain weird decisions instead of hiding them behind corporate language
+- say "we don't know" when the evidence does not know
+- avoid filler such as "seamlessly," "robust," "cutting-edge," "leverages," and other brochure words
+- do not write "this section will discuss" or narrate the document like a school report
+- do not use punctuation habits that scream generated prose; normal sentences are perfectly capable of surviving on commas, periods, colons, and parentheses
+- jokes should make the docs easier to read, not harder to trust
+
+The target voice is a sharp hacker who has seen some things, writes excellent documentation anyway, and occasionally looks directly at the camera.
+
+### Output selection examples
+
+```text
+Run ODIN and create a GitHub README.
+
+Run ODIN and create an interactive documentation site in C# using Blazor.
+
+Run ODIN and create a project handoff for another development team.
+
+Run ODIN and create the forensic packet, README, website, and developer handoff.
+
+Run ODIN against this repository and refresh only the README using the existing evidence packet.
+```
+
+### Proposed output selection model
+
+The final CLI syntax can change while the feature is being built. The behavior should land somewhere around here:
+
+```text
+odin output --profile readme
+odin output --profile website --framework blazor
+odin output --profile handoff
+odin output --profile packet
+odin output --profile all
+```
+
+If the user asks for an output and ODIN does not produce it, that is a failure. No victory confetti for missing files.
+
+## Presentation Output Architecture
+
+The useful mental model is pretty simple:
+
+1. read the repository;
+2. build one evidence model;
+3. render whatever humans asked for.
+
+Do not make the README scanner, website generator, and handoff generator each invent their own version of reality. That is how documentation becomes three siblings arguing about what dad said.
+
+```mermaid
+flowchart TD
+  repo["Repository, read only"] --> scan["ODIN forensic analysis"]
+  scan --> evidence["Normalized evidence model"]
+  evidence --> packet["findings.zip"]
+  evidence --> readme["README renderer"]
+  evidence --> handoff["Handoff renderer"]
+  evidence --> site["Website renderer"]
+  readme --> readmeFile["README.md"]
+  handoff --> handoffFile["PROJECT_HANDOFF.md"]
+  site --> siteFiles["Generated website"]
+```
+
+The analysis layer owns facts:
+
+- files
+- technologies
+- symbols
+- modules
+- dependencies
+- routes
+- commands
+- tests
+- workflows
+- observed behavior
+- declared metadata
+- derived relationships
+- documented claims
+- inferences
+- unknowns
+
+The presentation layer owns wording, layout, navigation, and audience.
+
+That boundary matters. A renderer can say the same thing more clearly. It cannot decide reality needs a rewrite.
+
+### Shared evidence contract
+
+Anything generated from the same run needs to agree on the facts that matter:
+
+- project identity
+- component names and paths
+- runtime and framework versions
+- commands
+- dependencies
+- test state
+- security findings
+- deployment facts
+- dates backed by evidence
+- unfinished work and known gaps
+
+If the README says one thing and the handoff says another, ODIN has managed to create documentation drama all by itself. Do not do that.
+
+### Regeneration behavior
+
+There are two useful modes.
+
+**Full generation**
+
+Use it when the target does not exist, is empty, or the user explicitly wants a clean replacement.
+
+**Evidence-aware update**
+
+Use it when a generated artifact already exists. Re-scan the evidence, update the parts that changed, and preserve useful human-written material when that can be done safely.
+
+Generated and manually retained content should stay distinguishable. ODIN should never make old hand-written prose look newly verified when it was not.
+
 ## Repository Overview
 
-ODIN is an agent skill: one directory consumed by Claude Code (as a skill with YAML frontmatter in `SKILL.md`), by Codex (via `AGENTS.md` and a `/odin` slash prompt in `prompts/odin.md`), and by any other agent that can read Markdown and run Python.
+ODIN is an agent skill packaged as one directory.
 
-Given a repository, it produces an evidence packet containing:
+Claude Code reads it as a skill through `SKILL.md`. Codex can pick it up through `AGENTS.md` and the `/odin` prompt in `prompts/odin.md`. Any other agent that can read Markdown and run Python can use it too. There is no secret handshake.
 
-- Executive summary, repository overview and architecture synthesis
-- One documentation record per physical file, including binaries, generated code, vendored trees and `.git` internals
-- One record per module, with a stable module identifier
-- Exhaustive file inventory with SHA-256 for every file, and classification keyed to explicit evidence rules
-- Symbols, types, imports and relationship graphs, recording which parser produced them
-- Dependency graph, CycloneDX and SPDX SBOMs, licences and advisories
-- Security findings in SARIF, plus redacted secret candidates
-- Test inventory, results and measured coverage, or an explicit statement that none was measured
-- Mermaid diagrams for architecture, modules, runtime, data flow, build and test, dependencies and sequences
-- Reproducibility instructions, an action manifest of everything attempted and skipped, tool versions, and integrity hashes
+Point it at a repository and the evidence packet can contain:
 
-The guarantees, and how each is enforced:
+- a plain-English project summary and architecture write-up
+- one documentation record for every physical file, including binaries, generated code, vendored trees, and `.git` internals
+- one record per module, with stable IDs
+- a complete file inventory with SHA-256 hashes
+- symbols, types, imports, and relationship graphs
+- dependency graphs plus CycloneDX and SPDX SBOMs
+- license and advisory data
+- SARIF security findings
+- redacted secret candidates
+- test inventory and results
+- measured coverage when it was actually measured
+- an explicit "not measured" when it was not
+- Mermaid diagrams for architecture, runtime, data flow, build and test paths, dependencies, and sequences
+- reproducibility instructions
+- an action manifest showing what ODIN tried, what worked, what failed, and what it deliberately skipped
+- tool versions and integrity hashes
 
-| Guarantee | Enforcement |
+The big promises are enforced instead of merely written in bold:
+
+| Promise | How ODIN keeps it |
 | --- | --- |
-| The repository is never modified | SHA-256 baseline before analysis, full re-verification after; an artifact root inside the repository is refused |
-| Nothing is invented | every conclusion carries an evidence label: OBSERVED, DECLARED, DERIVED, DOCUMENTED, INFERRED |
-| No secret is exposed | category, location, redaction and an irreversible fingerprint, never the value, never a validation attempt |
-| No untrusted code runs unsandboxed | dynamic analysis is gated on real isolation; without it, static analysis only, documented as skipped |
-| The run is reproducible | fixed environment, bytewise ordering, no wall-clock time in packet content, byte-identical packaging |
-| Failures do not abort the run | fail-soft with documented fallbacks; a partial packet beats no packet |
+| The repository is not modified | hash it before the run, hash it again after, refuse an artifact root inside the repo |
+| Claims need receipts | conclusions carry evidence labels such as OBSERVED, DECLARED, DERIVED, DOCUMENTED, and INFERRED |
+| Secrets do not get copied into the packet | record category, location, redaction, and fingerprint, never the value |
+| Untrusted project code does not just get executed | dynamic analysis requires real isolation; otherwise it stays static and records the skip |
+| Output is reproducible | fixed environment, bytewise ordering, no wall-clock time in packet content, deterministic packaging |
+| One failure does not ruin the whole run | fail soft, record the problem, keep going when it is safe |
 
-### Self-analysis results
+### ODIN auditing ODIN
 
-ODIN has been run against its own source. Every figure below comes from that packet, not from estimation.
+Yes, ODIN has been pointed at itself. That is either responsible engineering or software introspection with trust issues. Either way, the numbers below come from the packet.
 
 | Measure | Result |
 | --- | --- |
-| Files inventoried | 136 regular files (35 project files, 101 Git internals) across 93 directories |
+| Files inventoried | 125 regular files (49 project files: 38 first-party, 11 generated; 76 Git internals) across 67 directories (`odin.py inventory`) |
 | Modules documented | 9 |
-| Symbols indexed | 295, via the native CPython `ast`, 0 parse errors |
+| Symbols indexed | 223 top-level function and class definitions across 12 Python files, via the native CPython `ast`, 0 parse errors |
 | Third-party dependencies | 0, verified against `sys.stdlib_module_names` |
-| Tests | 69 discovered, 69 passed, 0 failed, 0 skipped |
+| Tests | 77 tests discovered |
 | Coverage | not measured, which is not zero percent |
 | Security findings | 2 Low, 1 Informational, 1 Low disclosure; 2 previously-reported Medium findings resolved |
 | Repository integrity after the run | PASS, all 136 files re-hashed identically |
@@ -112,16 +401,16 @@ ODIN has been run against its own source. Every figure below comes from that pac
 | Component | Type | Language/Framework | Runtime/Target | Path | Purpose |
 | --- | --- | --- | --- | --- | --- |
 | skill-entrypoints | Documentation | Markdown | read by agents and humans | `.` | `SKILL.md`, `PROTOCOL.md`, `AGENTS.md`, `README.md`, `LICENSE` and repository metadata |
-| reference | Documentation | Markdown | loaded on demand per phase | `reference/` | Nine operational documents plus the project image |
+| reference | Documentation | Markdown | loaded on demand per phase | `reference/` | Ten operational documents plus the project image |
 | templates | Documentation | Markdown | copied when writing packet records | `templates/` | Skeletons for per-file, per-module and top-level documents |
 | scripts-cli | CLI tool | Python (argparse) | CPython 3.8+ | `scripts/odin.py` | Sixteen subcommands; run-state lifecycle, environment policy, rendering, doc stubs, action log |
-| scripts-lib | Library | Python | CPython 3.8+ | `scripts/odin_lib/` | Eight standard-library modules implementing the mechanical protocol requirements |
-| tests | Test suite | Python `unittest` | CPython 3.8+ | `tests/` | 69 regression tests protecting the guarantees |
+| scripts-lib | Library | Python | CPython 3.8+ | `scripts/odin_lib/` | Nine standard-library modules implementing the mechanical protocol requirements |
+| tests | Test suite | Python `unittest` | CPython 3.8+ | `tests/` | 77 regression tests across 16 test classes protecting the guarantees |
 | ci | CI/CD | GitHub Actions YAML | GitHub-hosted runners | `.github/` | Runs the suite on every change and asserts the guarantees end to end |
 | prompts | Configuration | Markdown with frontmatter | Codex slash prompt | `prompts/` | `/odin` prompt shim with an installer-substituted path |
 | install | Build/tooling | PowerShell, POSIX shell | Windows, macOS, Linux | `install/` | Copy the skill into the Claude Code and Codex skill directories |
 
-Module boundaries are INFERRED at priority 5 (coherent directory), because the repository declares no workspace, manifest or build system (`inventory/modules.json`).
+Module boundaries are INFERRED at priority 5 from coherent directories because this repo has no workspace, manifest, or build system declaring them for us (`inventory/modules.json`).
 
 ## Architecture Overview
 
@@ -137,7 +426,7 @@ graph TD
     ref["reference/ - 9 phase documents"]
     cli["scripts/odin.py - 16 subcommands"]
     lib["scripts/odin_lib/ - 8 modules"]
-    tests["tests/ - 69 regression tests"]
+    tests["tests/ - 77 regression tests"]
   end
 
   repo[("REPO_ROOT - read-only evidence")]
@@ -177,7 +466,7 @@ graph LR
   readme --> common
 ```
 
-`classify`, `archives` and `common` are leaf modules. `verify` depends on three others, matching its role as the phase that cross-checks everyone else's output.
+`classify`, `archives`, and `common` are leaf modules. `verify` depends on three others because somebody has to check everybody else's homework.
 
 ## Tech Stack and Dependencies
 
@@ -192,7 +481,7 @@ graph LR
 | Testing | `unittest` | `tests/test_odin.py` |
 | Documentation | Markdown, Mermaid diagram sources | `reference/`, `graphs/*.mmd` in a produced packet |
 
-**Third-party dependencies: none.** All 115 import statements resolve to the standard library: `__future__`, `argparse`, `fnmatch`, `hashlib`, `io`, `json`, `math`, `os`, `pathlib`, `platform`, `posixpath`, `re`, `shutil`, `stat`, `subprocess`, `sys`, `tarfile`, `tempfile`, `unicodedata`, `unittest`, `zipfile`.
+**Third-party dependencies: none.** Not "none that we noticed", actually none. All 96 import statements resolve to the standard library: `__future__`, `argparse`, `fnmatch`, `hashlib`, `io`, `json`, `math`, `os`, `pathlib`, `platform`, `posixpath`, `re`, `runpy`, `shutil`, `signal`, `stat`, `subprocess`, `sys`, `sysconfig`, `tarfile`, `tempfile`, `trace`, `traceback`, `unicodedata`, `unittest`, `zipfile`.
 
 Optional external tools, each degrading cleanly when absent:
 
@@ -218,9 +507,12 @@ Optional external tools, each degrading cleanly when absent:
     - security.md             finding records, secrets contract
     - architecture.md         module identity and diagram conventions
     - packet.md               the output packet contract
-    - readme-generation.md    repository README specification
-    - odin.png                project image
+    - output-profiles.md      selectable output and voice contract
+    - readme-generation.md    GitHub README specification
+    - logo.png                project image used by generated README and website outputs
   - templates/
+    - project-handoff.md      developer handoff skeleton
+    - website-content-map.md  interactive docs content skeleton
     - file-record.md
     - module-record.md
     - top-level-documents.md
@@ -235,8 +527,9 @@ Optional external tools, each degrading cleanly when absent:
       - readme.py             README discovery and formatting enforcement
       - verify.py             integrity verification and packet validation
       - package.py            manifest and deterministic packaging
+      - coverage.py           sandboxed stdlib-trace coverage measurement
   - tests/
-    - test_odin.py            69 tests across 14 classes
+    - test_odin.py            77 tests across 16 classes
   - .github/
     - workflows/
       - tests.yml           CI: the suite plus end-to-end guarantee assertions
@@ -249,18 +542,18 @@ Optional external tools, each degrading cleanly when absent:
 
 ## Getting Started (Local Development)
 
-**Requirements:** Python 3.8 or newer. Nothing else. No `pip install` step exists because there is nothing to install.
+**Requirements:** Python 3.8 or newer. That is it. There is no `pip install` step because there is nothing to install.
 
-Clone, then verify the toolkit works:
+Clone it, then make sure the thing is alive:
 
 ```
 python scripts/odin.py --help
 python -m unittest discover -s tests
 ```
 
-The test suite takes roughly 20 seconds and requires no network, no fixtures on disk and no configuration.
+The test suite takes roughly 20 seconds. It needs no network, no pre-baked fixtures, and no ceremony.
 
-Install as a skill for your CLI:
+If you want ODIN available as a skill instead of calling the Python entrypoint by hand:
 
 ```
 # Windows
@@ -276,7 +569,7 @@ This copies the skill to `~/.claude/skills/odin` and `~/.codex/skills/odin`, and
 
 ## Configuration
 
-ODIN reads three environment variables. It has no configuration file.
+ODIN reads three environment variables and has no configuration file. There is not a hidden YAML file waiting behind a curtain.
 
 | Variable | Read by | Effect |
 | --- | --- | --- |
@@ -284,19 +577,19 @@ ODIN reads three environment variables. It has no configuration file.
 | `ODIN_HOME` | `install/install.ps1` | Overrides home-directory resolution during install |
 | `CODEX_HOME` | both installers | Overrides the Codex directory |
 
-It also *sets* a fixed environment for every child process, to keep runs reproducible: `TZ=UTC`, `LC_ALL=C.UTF-8`, `LANG=C.UTF-8`, `PYTHONHASHSEED=0`, `PYTHONIOENCODING=utf-8`, `SOURCE_DATE_EPOCH=315532800`, `umask=022` (`scripts/odin_lib/common.py`). Anything that cannot be applied is recorded rather than ignored.
+It also *sets* a fixed environment for child processes so two runs do not develop different personalities: `TZ=UTC`, `LC_ALL=C.UTF-8`, `LANG=C.UTF-8`, `PYTHONHASHSEED=0`, `PYTHONIOENCODING=utf-8`, `SOURCE_DATE_EPOCH=315532800`, `umask=022` (`scripts/odin_lib/common.py`). Anything that cannot be applied is recorded rather than ignored.
 
-**Environment disclosure policy.** When recording the analysis environment, values appear only for variables that describe build posture and identify nobody. Credential-shaped names, path lists and operator-identifying locations are withheld by class (`scripts/odin.py:260`), so a produced packet is shareable.
+**Environment disclosure policy.** ODIN records environment details that explain the build without doxxing the operator. Credential-shaped names, path lists and operator-identifying locations are withheld by class (`scripts/odin.py:260`), so a produced packet is shareable.
 
 ## Running the System
 
-Through an agent:
+Through a coding agent or CLI:
 
 - **Claude Code:** `/odin`, or ask directly, for example "audit this repository with ODIN"
 - **Codex:** `/odin [REPO_ROOT] [--artifacts DIR] [--network denied] [--sandbox none]`
 - **Any other agent:** point it at this directory and tell it to read `SKILL.md`
 
-Directly, as a toolkit:
+Or run the toolkit yourself:
 
 ```
 export ODIN_ARTIFACT_ROOT=/tmp/odin-run
@@ -315,7 +608,7 @@ python scripts/odin.py manifest
 python scripts/odin.py package
 ```
 
-Every subcommand prints a JSON summary to stdout and exits non-zero when its own status is FAIL.
+Every subcommand prints a JSON summary to stdout. If that command ends in `FAIL`, the process exits non-zero. Nice and boring, just like shell tooling should be.
 
 ## Deployment and CI/CD
 
@@ -326,9 +619,9 @@ Every subcommand prints a JSON summary to stdout and exits non-zero when its own
 | `tests` | The suite across ubuntu, windows and macos, on Python 3.8, 3.9, 3.10, 3.12 and 3.13. The 3.8 leg is pinned to ubuntu-22.04 because ubuntu-24.04 no longer provides it, and exists specifically to keep the "Python 3.8+" claim honest. Also fails if a dependency manifest ever appears, which would break the standard-library-only invariant |
 | `guarantees` | Runs ODIN against this repository and asserts the promises directly: the repository is unchanged afterwards, no bytecode cache is written into it, packaging is byte-identical across two runs, no operator value reaches the packet, and the README satisfies its formatting contract |
 
-The second job matters more than it looks. These guarantees fail *silently* when they regress: nothing errors, output just quietly stops being deterministic or stops being redacted. Asserting them on every change is the only way to notice.
+The second job is the paranoid one, and good. Determinism and redaction can regress without throwing a dramatic error. The output just gets subtly worse. CI checks the guarantees directly so subtle does not get to become permanent.
 
-**Deployment** is a directory copy performed by `install/install.ps1` or `install/install.sh`. There are no containers, no infrastructure-as-code artifacts and no release pipeline (OBSERVED absence).
+**Deployment** is literally a directory copy performed by `install/install.ps1` or `install/install.sh`. No containers, no infrastructure-as-code, no release pipeline, no tiny orchestration empire hiding under the floorboards (OBSERVED absence).
 
 ## Deep Code Reference
 
@@ -345,10 +638,11 @@ The second job matters more than it looks. These guarantees fail *silently* when
 | README support | `scripts/odin_lib/readme.py` | `scan:142`, `lint:340`, `slugify:331` | Technology discovery and formatting enforcement |
 | Verification | `scripts/odin_lib/verify.py` | `verify_integrity:90`, `validate:427` | Integrity baseline comparison and the pre-packaging gate |
 | Packaging | `scripts/odin_lib/package.py` | `build_manifest:36`, `verify_manifest:57`, `build_zip:86` | Sorted, fixed-timestamp, byte-reproducible |
+| Coverage | `scripts/odin_lib/coverage.py` | `measure:168`, `_run_process:96`, `_sanitize_arguments:54` | Sandboxed stdlib-`trace` coverage measurement; gated on isolation, never a bare run |
 
 ### Command Surface
 
-There is no HTTP or RPC surface. The public interface is the CLI.
+There is no HTTP API and no RPC layer. The public surface is the CLI. Fewer moving parts, fewer places for goblins.
 
 | Command | Purpose | Writes |
 | --- | --- | --- |
@@ -358,6 +652,7 @@ There is no HTTP or RPC surface. The public interface is the CLI.
 | `todos` | Unfinished-work scan with fixture and vendor separation | `static-analysis/unfinished-work.json` |
 | `secrets` | Redacted secret-candidate scan | `security/secrets-redacted.json` |
 | `docstub` | Seed one document per physical regular file | `files/**` |
+| `coverage` | Measure Python line coverage in a sandboxed worktree with the stdlib `trace` module | `tests/coverage-summary.json`, `tests/coverage/*.cover`, `tool-output/coverage.log` |
 | `readme-scan` | Technology discovery and component map | `readme/component-map.json` |
 | `readme-lint` | Enforce README formatting constraints | `readme/lint-report.json` |
 | `render` | Render Mermaid diagrams if a local renderer exists | `graphs/rendered/` |
@@ -370,11 +665,11 @@ There is no HTTP or RPC surface. The public interface is the CLI.
 
 ## Data and Integrations
 
-**Data stores: none.** No database, cache, object store, queue or message broker is used anywhere (DERIVED: no such client library is imported).
+**Data stores: none.** No database, cache, object store, queue, or message broker. That is derived from the code too, not wishful thinking: there is no client library for any of them.
 
 **External services: none.** There is no network code path in the toolkit. Network access is denied by default and, when a caller explicitly authorises it, is limited to package identifiers and advisory lookups, never repository source.
 
-**Persistent state** is two things, both outside the analysed repository:
+**Persistent state** comes down to two things, both outside the repository being analysed:
 
 | State | Location | Purpose |
 | --- | --- | --- |
@@ -385,7 +680,7 @@ There is no HTTP or RPC surface. The public interface is the CLI.
 
 ## Security Notes
 
-**Controls enforced in code, not documentation:**
+**Controls enforced in code, because promises are cheaper than tests:**
 
 | Control | Implementation | Regression test |
 | --- | --- | --- |
@@ -408,13 +703,13 @@ There is no HTTP or RPC surface. The public interface is the CLI.
 
 **Resolved since the previous self-analysis:** ODIN-SEC-0002 (Medium, packets recorded the operator's `PATH` and `HOME`) and ODIN-SEC-0005 (Medium, no licence).
 
-**What this does not establish.** No SAST tool was available during self-analysis, so whole classes of defect were never looked for. Nothing ran under sandbox isolation. The repository is not "secure" because review found little; it is small, dependency-free and network-free, which is an argument about attack surface, not a clean bill of health.
+**What this does not prove.** No SAST tool was available during self-analysis, so entire classes of bugs were never searched for. Nothing ran under sandbox isolation. The repository is not "secure" because review found little; it is small, dependency-free and network-free, which is an argument about attack surface, not a clean bill of health.
 
-**Authentication and authorisation:** not applicable. There are no users, sessions, cookies, tokens or access controls.
+**Authentication and authorisation:** not applicable. No users, sessions, cookies, tokens, or access controls exist here.
 
 ## Observability and Monitoring
 
-There is no logging framework, no metrics and no tracing. Observability comes from three deliberate mechanisms:
+There is no logging framework, no metrics stack, and no tracing system. ODIN is a CLI, not a space program. You still get three useful observability hooks:
 
 | Mechanism | What it gives you |
 | --- | --- |
@@ -422,7 +717,7 @@ There is no logging framework, no metrics and no tracing. Observability comes fr
 | `ACTION_MANIFEST.json` | Every material action attempted or skipped, with a monotonic sequence number, tool version, exact sanitized command, exit code and reason. Actions that failed, timed out, were unavailable or were blocked by policy are recorded alongside successes |
 | `VALIDATION.json` | The pre-packaging report: completeness, structure, privacy, coverage honesty and manifest integrity |
 
-Sequence numbers are used instead of timestamps so that packet content stays reproducible.
+Sequence numbers are used instead of timestamps so packet content stays reproducible. Time is useful. Deterministic archives are more useful here.
 
 ## Common Tasks and Troubleshooting
 
@@ -443,11 +738,54 @@ Sequence numbers are used instead of timestamps so that packet content stays rep
 | `render` reports `unavailable` | No local Mermaid renderer. Not an error; the `.mmd` sources are canonical |
 | Inventory count looks too small | Traversal was blocked. Check `inventory/traversal-errors.json` before trusting the packet |
 
+## Change Log
+
+Actual changes live here. Not every typo needs a parade, but behavior, architecture, output, compatibility, and security changes do.
+
+### Unreleased
+
+#### Added
+
+- Added selectable presentation-output concepts for:
+  - GitHub repository README generation.
+  - Interactive project documentation websites in a user-selected language or framework.
+  - Developer handoff documents for transferring project ownership to another developer, team, or AI coding CLI.
+- Added a shared-output architecture so presentation artifacts consume the same normalized evidence model instead of independently re-analyzing the repository.
+- Added `reference/logo.png` as the required project identity image for generated README and website introductions.
+- Added the nullcromancer black/green terminal presentation language for README and interactive-site outputs.
+- Added a detailed output contract covering project summaries, architecture, repository layout, setup, commands, configuration, integrations, security, observability, troubleshooting, deployment, incomplete work, and contributor guidance.
+
+#### Changed
+
+- Reframed the existing README-generation workflow as part of a broader presentation/output layer with README, website, handoff, packet, and all-output modes.
+- Expanded the GitHub README target from a compact repository overview into a full project manual.
+- Merged the previous **Business Analyst Summary** and **Technical Summary** sections into a single opening section named **The Rundown**.
+- Clarified the separation between deterministic repository analysis and flexible presentation rendering.
+- Clarified that GitHub README theming must remain GitHub-safe and cannot depend on custom CSS.
+- Updated the intended output model so ODIN can understand a project once and render multiple audience-specific artifacts from the same evidence.
+
+#### Design Direction
+
+- The forensic scan stays deterministic, exhaustive, read-only, and evidence-driven. That part does not get cute.
+- Presentation can change its clothes, but not its facts.
+- If the evidence is uncertain, the docs say so. Confident fiction is still fiction.
+- Useful human-written material should survive regeneration when ODIN can preserve it safely.
+
+### Changelog Rules
+
+When ODIN writes changelog entries, the rules are simple:
+
+- describe meaningful product, architecture, workflow, output, or compatibility changes;
+- separate **Added**, **Changed**, **Fixed**, **Removed**, and **Security** items when applicable;
+- use repository evidence when documenting changes discovered from source history;
+- avoid inventing release dates, semantic versions, or completed work that cannot be verified;
+- preserve manually authored release notes unless the caller explicitly requests replacement.
+
 ## Contributing
 
-Read `AGENTS.md` first; it states the invariants.
+Read `AGENTS.md` first. It contains the rules you really do not want to discover by failing a test ten minutes later.
 
-**Toolkit constraints, which are not negotiable:**
+**Toolkit constraints. These are not suggestions:**
 
 - Python 3.8+, **standard library only**. No third-party package, ever
 - No network access
@@ -455,13 +793,13 @@ Read `AGENTS.md` first; it states the invariants.
 - Never execute repository-controlled code
 - Deterministic output: sorted keys, bytewise path ordering, LF endings, no wall-clock time in packet content
 
-**Before committing:** run `python -m unittest discover -s tests`. The suite covers the promises that are easy to break silently. CI runs the same suite on every push and pull request, plus end-to-end guarantee assertions.
+**Before committing:** run `python -m unittest discover -s tests`. The suite protects the boring promises that are extremely easy to break without noticing. CI runs the same suite plus end-to-end guarantee checks.
 
-**If you change what the packet must contain,** update all four of: the contract section of `PROTOCOL.md`, `reference/packet.md`, `REQUIRED_PACKET_ARTIFACTS` in `scripts/odin_lib/verify.py`, and the templates.
+**If you change what the packet must contain,** update all four places below. Yes, all four. Future you will complain if present you gets clever: the contract section of `PROTOCOL.md`, `reference/packet.md`, `REQUIRED_PACKET_ARTIFACTS` in `scripts/odin_lib/verify.py`, and the templates.
 
-**Do not reword requirements in `PROTOCOL.md`.** It is reproduced content-faithfully from the source specification. Operational guidance belongs in `reference/`.
+**Do not freestyle `PROTOCOL.md`.** It is the source specification. Operational guidance belongs in `reference/`.
 
-**Documentation style:** headings are plain ASCII with no emoji and no ampersands. Box-drawing, arrow, geometric-shape and miscellaneous-technical Unicode ranges are forbidden everywhere, because GitHub renders them as question marks. `python scripts/odin.py readme-lint` enforces this.
+**Documentation style:** keep headings plain ASCII, with no emoji and no ampersands. Box-drawing, arrow, geometric-shape and miscellaneous-technical Unicode ranges are forbidden everywhere, because GitHub renders them as question marks. `python scripts/odin.py readme-lint` enforces this.
 
 ## License
 

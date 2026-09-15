@@ -1,17 +1,17 @@
 ---
-description: Run the ODIN repository-forensics protocol and produce findings.zip
-argument-hint: [REPO_ROOT] [--artifacts DIR] [--network denied|authorized] [--sandbox none|container|microvm]
+description: Run ODIN repository forensics and produce a packet, README, website, handoff, or all outputs
+argument-hint: [REPO_ROOT] [--output packet|readme|website|handoff|all] [--framework STACK] [--artifacts DIR] [--network denied|authorized] [--sandbox none|container|microvm]
 ---
 
 Run the **ODIN** protocol: a deterministic, read-only forensic analysis of one
-repository that produces a self-contained evidence packet named exactly `findings.zip`.
+repository that builds a defensible evidence model and can render `findings.zip`, a GitHub README, an interactive documentation site, a developer handoff, or all outputs.
 
 The skill lives at:
 
     {{ODIN_DIR}}
 
-(If that path was not substituted at install time, locate the skill directory — it
-contains `SKILL.md`, `PROTOCOL.md`, `reference/` and `scripts/odin.py` — and use it.)
+(If that path was not substituted at install time, locate the skill directory - it
+contains `SKILL.md`, `PROTOCOL.md`, `reference/` and `scripts/odin.py` - and use it.)
 
 ## Do this now
 
@@ -22,9 +22,10 @@ contains `SKILL.md`, `PROTOCOL.md`, `reference/` and `scripts/odin.py` — and u
    REPO_ROOT defaults to the current working directory; ARTIFACT_ROOT defaults to a
    writable directory **outside** REPO_ROOT; network defaults to `denied`; sandbox
    defaults to `none` unless you can confirm real isolation.
-4. Execute Phases 0–12 from `SKILL.md`, loading `reference/*.md` as each phase needs
-   it. Use `python {{ODIN_DIR}}/scripts/odin.py` for the mechanical phases.
-5. Finish with the Phase 12 completion summary and nothing else.
+4. Resolve `--output` from the arguments. If absent, default to `packet`. For `website`, honor `--framework` when supplied.
+5. Execute Phases 0-12 from `SKILL.md`, loading `reference/*.md` as each phase needs it. Use `python {{ODIN_DIR}}/scripts/odin.py` for the mechanical phases.
+6. For README, website, handoff, or all-output requests, read `reference/output-profiles.md` before rendering.
+7. Finish with the Phase 12 completion summary and the paths to every artifact actually produced.
 
 ## Non-negotiable
 

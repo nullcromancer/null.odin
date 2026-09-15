@@ -1,4 +1,4 @@
-# Template — `modules/<stable-module-id>.md`
+# Template: `modules/<stable-module-id>.md`
 
 One per entry in `inventory/modules.json`. `odin.py validate` checks for the headings
 marked **required** below.
@@ -6,12 +6,12 @@ marked **required** below.
 ---
 
 ```markdown
-# packages-api-server — `@acme/api-server`
+# packages-api-server: `@acme/api-server`
 
 **Stable ID:** `packages-api-server`
 **Path:** `packages/api-server`
 **Kind:** deployable service
-**Boundary evidence:** DECLARED — `pnpm-workspace.yaml:3`, `packages/api-server/package.json`
+**Boundary evidence:** DECLARED: `pnpm-workspace.yaml:3`, `packages/api-server/package.json`
 
 ## Purpose (required)
 
@@ -53,7 +53,7 @@ Startup order, readiness, shutdown behavior, what happens on a failed dependency
 ## Entry points (required)
 
 Binaries, CLI commands, HTTP/RPC servers, workers, scheduled jobs, library entry
-functions — with the evidence class for each.
+functions: with the evidence class for each.
 
 ## Configuration and environment (required)
 

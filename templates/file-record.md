@@ -1,4 +1,4 @@
-# Template — `files/<repository-relative-path>.md`
+# Template: `files/<repository-relative-path>.md`
 
 `odin.py docstub` generates this shape with the Identity block already filled from
 inventory evidence. Keep the headings; replace every `PENDING`.
@@ -29,14 +29,14 @@ A field that genuinely does not apply gets an explicit statement, not a blank:
 ## Purpose / summary
 
 One or two paragraphs: what this file is for, in the context of its module. Written
-from the code, not from the docstring alone — and where the docstring and the code
+from the code, not from the docstring alone: and where the docstring and the code
 disagree, say so.
 
 ## Key symbols and types
 
 | Symbol | Kind | Visibility | Signature | Notes |
 | --- | --- | --- | --- | --- |
-| `Parser` | class | public | — | main entry type |
+| `Parser` | class | public |: | main entry type |
 | `Parser.parse` | method | public | `(self, text: str) -> Ast` | raises `ParseError` |
 | `_tokenize` | function | private | `(text: str) -> Iterator[Token]` | |
 
@@ -80,12 +80,12 @@ handling."
 
 ## Measured coverage
 
-Not measured. *— or —* 87.4% line coverage, 71.0% branch (coverage.py 7.5.0,
+Not measured. *- or -* 87.4% line coverage, 71.0% branch (coverage.py 7.5.0,
 OBSERVED, `tests/coverage/coverage.json`).
 
 ## TODO / unfinished work
 
-- `UNFIN-000123` line 92, TODO(alice) — handle retries, issue #123
+- `UNFIN-000123` line 92, TODO(alice): handle retries, issue #123
 
 ## Related files and modules
 

@@ -1,4 +1,4 @@
-# `odin.py` — toolkit reference
+# `odin.py` - toolkit reference
 
 Stdlib-only Python 3.8+. No third-party packages, no network, no writes into
 REPO_ROOT, no execution of repository-controlled code. Every subcommand prints a JSON
@@ -24,7 +24,7 @@ odin.py init --repo <REPO_ROOT> [--artifacts <DIR>]
 
 Resolves REPO_ROOT and ARTIFACT_ROOT and **refuses an ARTIFACT_ROOT inside
 REPO_ROOT**. Without `--artifacts`, picks `<system temp>/odin-<repo name>-<12 hex of
-the repo path>` — stable across runs for the same repository. Creates the packet
+the repo path>` - stable across runs for the same repository. Creates the packet
 skeleton, `scratch/`, `scratch/home/` and `scratch/tmp/`, applies the determinism
 environment (`TZ`, `LC_ALL`, `LANG`, `PYTHONHASHSEED`, `SOURCE_DATE_EPOCH`, umask) and
 records anything that could not be applied. Seeds `ACTION_MANIFEST.json`. Probes
@@ -39,14 +39,14 @@ environment. Writes `inventory/environment.json`.
 
 Values appear only for variables that describe the build or runtime posture and
 identify nobody (`TZ`, `LANG`, `CI`, `NODE_ENV`, `GOFLAGS`, …). Everything else is
-redacted by class: credential-shaped names, path lists (`PATH`, `PYTHONPATH`, … — the
+redacted by class: credential-shaped names, path lists (`PATH`, `PYTHONPATH`, … - the
 entry *count* is kept because the shape is useful, the content is not), and
 operator-identifying locations (`HOME`, `USERPROFILE`, `TEMP`, `JAVA_HOME`, …). A packet
 is meant to be shareable, so the operator's username and installed-software inventory
 never reach it.
 
 Tool availability decides which analyses are possible. An unavailable tool becomes an
-`unavailable` manifest action — never a silent substitution.
+`unavailable` manifest action - never a silent substitution.
 
 ## `inventory`
 
@@ -76,7 +76,7 @@ archive metadata, and nothing is ever extracted. Members are checked for path tr
 symlink escape, decompression-bomb ratios and nested archives; a nested archive is
 flagged, never opened. Malformed archives and parser crashes are recorded as findings
 rather than aborting the walk. Archive members are embedded artifacts of their container
-— they are not repository files and get no per-file document.
+- they are not repository files and get no per-file document.
 
 **Writes:** `inventory/files.jsonl`, `directories.jsonl`, `tree.txt`,
 `source-hashes.sha256` (the baseline), `languages.json`, `file-types.json`,
@@ -85,7 +85,7 @@ rather than aborting the walk. Archive members are embedded artifacts of their c
 `files/_PATH_MAP.json`.
 
 `_PATH_MAP.json` records the rare paths whose document name had to be escaped because
-the host filesystem cannot represent it verbatim — Windows reserved device names
+the host filesystem cannot represent it verbatim - Windows reserved device names
 (`aux.c`), forbidden characters, trailing dots. The mapping stays injective.
 
 ## `todos`
@@ -176,7 +176,7 @@ entrypoints, build files, manifests and lockfiles, CI systems, containers and Ia
 configuration files, secret-manager references, test files and frameworks, and
 documentation. Vendored and VCS-metadata content is excluded.
 
-Crucially it also reports **absences** — no CI, no tests, no manifests — because an
+Crucially it also reports **absences** - no CI, no tests, no manifests - because an
 absence is evidence and belongs in the README rather than being silently omitted.
 
 **Writes:** `readme/component-map.json`. Evidence for a README, not prose for one.
@@ -189,10 +189,9 @@ odin.py readme-lint [--path README.md] [--no-section-check] [--no-write]
 
 Enforces the README formatting constraints mechanically: emoji and emoji shortcodes in
 headings, ampersands in headings, non-ASCII headings, the four forbidden Unicode ranges
-(Box Drawing, Arrows, Geometric Shapes, Miscellaneous Technical — checked inside code
+(Box Drawing, Arrows, Geometric Shapes, Miscellaneous Technical - checked inside code
 fences too, because fenced content still renders), duplicate anchors, table-of-contents
-links that resolve to no heading, the 19 required sections, and Business Analyst Summary
-placement at the top.
+links that resolve to no heading, the 19 required sections, The Rundown placement at the top, and the no-em-dash/no-en-dash prose rule.
 
 Exits non-zero on any error-severity violation. `--no-section-check` checks formatting
 only, for a README that is not meant to follow the full structure.
@@ -208,7 +207,7 @@ odin.py render [--renderer mmdc] [--format svg|png|pdf] [--background ...] [--ti
 Renders every `graphs/*.mmd` into `graphs/rendered/` using a trusted **local** Mermaid
 renderer. When no renderer is available the command is not an error: it writes
 `graphs/rendered/RENDER_STATUS.json` recording `unavailable` and the reason, and the
-`.mmd` sources — which are canonical — are retained untouched. A per-diagram rendering
+`.mmd` sources - which are canonical - are retained untouched. A per-diagram rendering
 failure is likewise recorded rather than fatal.
 
 ## `log`
@@ -218,7 +217,7 @@ odin.py log --phase P --action-id A --status S --tool T --command "..." [...]
 odin.py log --from-json actions.json
 ```
 
-Appends to `ACTION_MANIFEST.json` with a monotonic sequence number — never a
+Appends to `ACTION_MANIFEST.json` with a monotonic sequence number - never a
 wall-clock time. Options mirror the protocol's required fields: `--tool-version`,
 `--runtime-version`, `--cwd`, `--input-scope`, `--output` (repeatable), `--sandbox`,
 `--network`, `--repo-code-executed`, `--exit-code`, `--termination`, `--log-path`

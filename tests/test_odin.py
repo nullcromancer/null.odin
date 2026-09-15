@@ -849,22 +849,20 @@ class TestClassification(unittest.TestCase):
 
 GOOD_README = """# Project
 
-## Business Analyst Summary
+## The Rundown
 
 - does a thing
-
-## Technical Summary
-
 - built with Python
 
 ## Last Updated
 
-2026-09-13
+2026-09-15
 
 ## Table of Contents
 
-- [Business Analyst Summary](#business-analyst-summary)
+- [The Rundown](#the-rundown)
 - [Tech Stack and Dependencies](#tech-stack-and-dependencies)
+- [Change Log](#change-log)
 
 ## Repository Overview
 ## Components
@@ -880,6 +878,7 @@ GOOD_README = """# Project
 ## Security Notes
 ## Observability and Monitoring
 ## Common Tasks and Troubleshooting
+## Change Log
 ## Contributing
 ## License
 """
@@ -916,6 +915,12 @@ class TestReadmeLint(unittest.TestCase):
                              require_sections=False)
         self.assertEqual(report["status"], "FAIL")
         self.assertIn("ampersand-in-heading", [v["rule"] for v in report["violations"]])
+
+    def test_em_and_en_dash_are_rejected(self):
+        for ch in (chr(0x2014), chr(0x2013)):
+            report = readme.lint("Human prose " + ch + " nope" + chr(10),
+                                 require_sections=False)
+            self.assertIn("prose-dash", [v["rule"] for v in report["violations"]])
 
     def test_box_drawing_characters_are_rejected(self):
         for ch in self.BOX_DRAWING:
@@ -967,11 +972,11 @@ class TestReadmeLint(unittest.TestCase):
     def test_missing_required_sections_are_reported(self):
         report = readme.lint("# Title" + chr(10) + chr(10) + "## Overview" + chr(10))
         self.assertEqual(report["status"], "FAIL")
-        self.assertIn("Business Analyst Summary", report["missing_required_sections"])
+        self.assertIn("The Rundown", report["missing_required_sections"])
 
-    def test_ba_summary_must_come_first(self):
-        body = GOOD_README.replace("## Business Analyst Summary", "## Zzz Later", 1)
-        body += chr(10) + "## Business Analyst Summary" + chr(10) + chr(10) + "- late" + chr(10)
+    def test_rundown_must_come_first(self):
+        body = GOOD_README.replace("## The Rundown", "## Zzz Later", 1)
+        body += chr(10) + "## The Rundown" + chr(10) + chr(10) + "- late" + chr(10)
         report = readme.lint(body)
         self.assertIn("section-order", [v["rule"] for v in report["violations"]])
 

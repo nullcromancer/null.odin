@@ -10,13 +10,13 @@ Determine them in this priority order:
 2. Language package/module boundaries
 3. Deployable service or application boundaries
 4. Independently tested or built components
-5. Coherent directory boundaries — the fallback, and label it `INFERRED`
+5. Coherent directory boundaries: the fallback, and label it `INFERRED`
 
 ## Stable module IDs
 
 Derive the ID from the normalized repository-relative path or package identity, so the
 same repository yields the same IDs on every run. Replace path separators with `-`,
-lowercase, and keep it filesystem-safe — it becomes `modules/<id>.md`.
+lowercase, and keep it filesystem-safe: it becomes `modules/<id>.md`.
 
 `src/core` → `src-core`  ·  `packages/api-server` → `packages-api-server`  ·  the
 repository root as a single module → `root`
@@ -44,7 +44,7 @@ Mermaid `.mmd` source is canonical. Keep the source whether or not it renders.
 
 | File | Shows |
 | --- | --- |
-| `graphs/architecture.mmd` | system/context — the repository in its environment |
+| `graphs/architecture.mmd` | system/context: the repository in its environment |
 | `graphs/modules.mmd` | module/component architecture and internal dependencies |
 | `graphs/runtime.mmd` | runtime processes, services, listeners, datastores |
 | `graphs/data-flow.mmd` | principal data flows across trust boundaries |
@@ -66,12 +66,12 @@ initialization, the build, or the test flow instead.
 
 Keep them readable and evidence-bound:
 
-- Name nodes after real modules, services and files — not abstractions you invented.
+- Name nodes after real modules, services and files: not abstractions you invented.
 - Mark uncertainty in the diagram itself: dashed edges for `INFERRED` relationships,
   a distinct style for unresolved or dynamic edges.
 - Keep one diagram to one question. Six focused diagrams beat one unreadable one.
 - Keep an evidence reference behind every inferred edge, in `ARCHITECTURE.md` or the
-  module document — a reader must be able to ask "why is that arrow there?" and get an
+  module document: a reader must be able to ask "why is that arrow there?" and get an
   answer.
 
 ```mermaid
@@ -95,7 +95,7 @@ graph LR
 ## Documented versus inferred architecture
 
 Analyze the repository's own diagrams and architecture documents too, then compare them
-with what you inferred. Report the meaningful inconsistencies — a component the docs
+with what you inferred. Report the meaningful inconsistencies: a component the docs
 describe that no longer exists, a service the code talks to that no diagram shows, a
 dependency direction that has reversed. That comparison is often the most valuable
 paragraph in `ARCHITECTURE.md`.

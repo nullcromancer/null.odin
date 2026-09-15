@@ -17,7 +17,7 @@ you, across every ecosystem the classifier knows.
 2. The package manager's offline resolved graph, using existing lockfiles and cache
 3. Vendored package metadata
 4. Manifest exact version
-5. Manifest version range or constraint — recorded **as a constraint**
+5. Manifest version range or constraint: recorded **as a constraint**
 6. Image digest
 7. Image tag, only when no digest is available
 8. Source import or reference with no declared version
@@ -99,12 +99,12 @@ which fields are absent as a result. Do not emit a schema-shaped file containing
 invented components.
 
 Split SBOMs per ecosystem or per workspace component when one repository contains
-several — and say which scheme you used.
+several: and say which scheme you used.
 
 ## Vulnerability lookup
 
 Use offline or local vulnerability databases first. If the caller authorized network
-advisory lookup, query **package identifier and version only** — never transmit
+advisory lookup, query **package identifier and version only**: never transmit
 repository source, snippets, private identifiers or discovered secrets. Record the
 destination category and the reason. Do not contact application production endpoints.
 
@@ -120,4 +120,4 @@ lifecycle scripts; vendored binaries with no provenance; runtime versions declar
 end of support (when you can establish that from evidence).
 
 These belong in `SECURITY.md` and `security/findings.sarif` as well as
-`DEPENDENCIES.md` — cross-reference rather than duplicating the analysis.
+`DEPENDENCIES.md`: cross-reference rather than duplicating the analysis.

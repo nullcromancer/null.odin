@@ -1,21 +1,18 @@
-# Repository README generation and maintenance
+# GitHub README output profile
 
-ODIN's primary deliverable is `findings.zip`. This document covers a **second,
-optional deliverable**: maintaining the repository's own root `README.md` as a
-wiki-style document serving business analysts, developers and executives at once.
+This is the detailed contract for ODIN's `readme` output profile. The README is a full project manual for humans who want the short version first and the entire technical rabbit hole if they keep scrolling.
 
-Run this when the caller asks for it — "update the README", "document this repo",
-"maintain the readme" — or as Phase 9b of a full run when the caller wants both.
+Use it when the caller asks for a GitHub README, repository documentation, README maintenance, or the `all` output profile. The broad output-selection rules live in `reference/output-profiles.md`.
 
 The README is a **repository artifact, not packet content**. Two protocol rules are
 therefore scoped differently here, and the difference is deliberate:
 
 | Protocol rule | In the packet | In the repository README |
 | --- | --- | --- |
-| No wall-clock time in deterministic content | binding | **inverted** — a `Last Updated` date is required |
-| REPO_ROOT must not be modified | binding | **suspended for `./README.md` only**, and only when the caller asked for README maintenance |
+| No wall-clock time in deterministic content | binding | **inverted**, a `Last Updated` date is required |
+| REPO_ROOT must not be modified | binding | repository mutation remains opt-in; otherwise write `ARTIFACT_ROOT/outputs/README.md` |
 
-Everything else — the no-invention rule, evidence labelling, secret redaction — applies
+Everything else, the no-invention rule, evidence labelling, secret redaction, applies
 unchanged. If the caller did **not** ask for README maintenance, `./README.md` is
 evidence like every other file and must not be touched.
 
@@ -23,11 +20,11 @@ evidence like every other file and must not be touched.
 
 Decide before writing anything.
 
-**FULL GENERATION** — when `./README.md` does not exist, or exists but is empty or
+**FULL GENERATION:** when `./README.md` does not exist, or exists but is empty or
 whitespace only. Create the file from scratch following the required structure below.
 Overwrite entirely.
 
-**INCREMENTAL UPDATE** — when `./README.md` exists and is not empty. Do **not** rewrite
+**INCREMENTAL UPDATE:** when `./README.md` exists and is not empty. Do **not** rewrite
 the whole file.
 
 - Update only what changed during the current session.
@@ -36,7 +33,7 @@ the whole file.
   file timestamps and metadata.
 - Preserve existing wording and sections unless evidence requires a change.
 - Patch-style edits only. Keep headings and anchors stable.
-- If you cannot prove anything changed this session, **do not modify content** — except
+- If you cannot prove anything changed this session, **do not modify content**, except
   `Last Updated` / `Last Commit Date` if evidence supports it.
 
 One narrow exception permits a full rewrite of a non-empty README: the existing file
@@ -62,8 +59,8 @@ Conditional on what your environment can actually support:
 - If you can reliably cite line numbers, every major claim is followed by evidence in
   parentheses: `(path/to/file.ext:123)` or `(path/to/file.ext:123-145)` or
   `(path/to/file.ext)`.
-- If line numbers are **not** reliable, use file-path evidence only —
-  `(path/to/file.ext)` — and **do not invent line references**.
+- If line numbers are **not** reliable, use file-path evidence only ,
+  `(path/to/file.ext)`, and **do not invent line references**.
 
 ODIN's own `static-analysis/symbols.jsonl` carries real line numbers for every parsed
 symbol, so cite them when a symbol came from a parser. Do not cite line numbers for
@@ -73,7 +70,7 @@ claims drawn from prose.
 
 - A **Last Updated** section near the top, carrying today's local date from the
   environment.
-- **Last Commit Date** when repository metadata provides it —
+- **Last Commit Date** when repository metadata provides it ,
   `inventory/vcs-state.json` records `head_commit_evidence.committer_date_repository_evidence`
   from a read-only `git log`. If no such evidence exists, write
   **"Insufficient Evidence"**; do not guess and do not fabricate a date.
@@ -87,30 +84,30 @@ claims drawn from prose.
 > `inventory/vcs-state.json` holds the result. Where it is absent, that file records
 > the absence and the README says "Insufficient Evidence".
 
-## Repository-wide analysis — scan everything first
+## Repository-wide analysis, scan everything first
 
 Identify what technologies exist **before** writing. `inventory/roles.json` and
 `inventory/files.jsonl` already classify most of this; confirm rather than re-derive.
 
 **Language and build manifests (polyglot):**
 
-- .NET — `.sln`, `**/*.csproj`, `*.fsproj`, `*.vbproj`, `Directory.Build.props`/`.targets`, `global.json`, `NuGet.config`
-- Node/JS/TS — `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `package-lock.json`, `tsconfig.json`, `nx.json`, `turbo.json`
-- Python — `pyproject.toml`, `requirements*.txt`, `setup.py`, `Pipfile`, `poetry.lock`, conda env files
-- Java/Kotlin — `pom.xml`, `build.gradle`, `settings.gradle`, `gradlew`, `gradle.properties`
-- Go — `go.mod`, `go.sum`
-- Rust — `Cargo.toml`, `Cargo.lock`
-- Ruby — `Gemfile`, `Gemfile.lock`
-- PHP — `composer.json`, `composer.lock`
-- C/C++ — `CMakeLists.txt`, `Makefile`, `*.vcxproj`
-- Mobile — `AndroidManifest.xml`, `*.xcodeproj`, `*.xcworkspace`
-- Frontend — `next.config.*`, `vite.config.*`, `angular.json`, `vue.config.*`, `svelte.config.*`, `remix.config.*`
-- Monorepo tooling — `lerna.json`, workspace configs, bazel, buck, pants
+- .NET, `.sln`, `**/*.csproj`, `*.fsproj`, `*.vbproj`, `Directory.Build.props`/`.targets`, `global.json`, `NuGet.config`
+- Node/JS/TS, `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `package-lock.json`, `tsconfig.json`, `nx.json`, `turbo.json`
+- Python, `pyproject.toml`, `requirements*.txt`, `setup.py`, `Pipfile`, `poetry.lock`, conda env files
+- Java/Kotlin, `pom.xml`, `build.gradle`, `settings.gradle`, `gradlew`, `gradle.properties`
+- Go, `go.mod`, `go.sum`
+- Rust, `Cargo.toml`, `Cargo.lock`
+- Ruby, `Gemfile`, `Gemfile.lock`
+- PHP, `composer.json`, `composer.lock`
+- C/C++, `CMakeLists.txt`, `Makefile`, `*.vcxproj`
+- Mobile, `AndroidManifest.xml`, `*.xcodeproj`, `*.xcworkspace`
+- Frontend, `next.config.*`, `vite.config.*`, `angular.json`, `vue.config.*`, `svelte.config.*`, `remix.config.*`
+- Monorepo tooling, `lerna.json`, workspace configs, bazel, buck, pants
 
 **App configuration and secrets patterns:** `appsettings*.json`, `web.config`,
 `*.config`, `.yaml`/`.yml`, `.env`, config folders; references to secret managers
 (Vault, AWS/GCP/Azure secrets, SSM, Doppler, 1Password). Identify config **keys and
-environment variable names** — never print actual secret values.
+environment variable names**, never print actual secret values.
 
 **CI/CD:** `.github/workflows/*`, `azure-pipelines.yml`, `Jenkinsfile`, GitLab CI,
 buildkite, teamcity; build scripts `*.ps1`, `*.cmd`, `*.sh`, make targets, npm scripts,
@@ -122,7 +119,7 @@ manifests, bicep, terraform, pulumi, cloudformation.
 **Source and runtime entrypoints:** all source extensions for detected languages;
 entrypoints, route definitions, job schedulers, workers, CLI commands.
 
-**Tests:** `/Tests/`, `**/*.Tests.*`, and framework configs — xUnit, NUnit, MSTest,
+**Tests:** `/Tests/`, `**/*.Tests.*`, and framework configs, xUnit, NUnit, MSTest,
 Jest, Vitest, Pytest, JUnit.
 
 **Docs:** `/docs`, `/wiki`, ADRs, README fragments, diagrams, architecture notes.
@@ -131,7 +128,7 @@ Jest, Vitest, Pytest, JUnit.
 `readme/component-map.json`. Treat its output as evidence to confirm, not as prose to
 paste.
 
-## Technology discovery — do this first
+## Technology discovery, do this first
 
 - Identify the primary languages and frameworks, **ranked by presence and importance**.
 - Determine whether the repository is: (a) a single app, (b) a multi-component system
@@ -140,7 +137,7 @@ paste.
   or package metadata), type (web app, API, library, worker, CLI tool, UI,
   infrastructure), language/framework/runtime, path, and evidence-based purpose.
 
-## Framework-specific discovery — apply only what exists
+## Framework-specific discovery, apply only what exists
 
 For each detected ecosystem, document the equivalents of:
 
@@ -149,53 +146,54 @@ For each detected ecosystem, document the equivalents of:
 | A | Entrypoints and runtime boot |
 | B | Dependency and package map, grouped by purpose |
 | C | Composition, DI and wiring, if applicable |
-| D | Data layer — ORMs, providers, migration strategy, stored-procedure usage summary |
+| D | Data layer, ORMs, providers, migration strategy, stored-procedure usage summary |
 | E | Integrations |
-| F | Security — AuthN/AuthZ, CORS, CSP, headers, cookies, session settings |
-| G | Observability — logging, metrics, tracing |
+| F | Security, AuthN/AuthZ, CORS, CSP, headers, cookies, session settings |
+| G | Observability, logging, metrics, tracing |
 | H | Deep code index, prioritising core domain and service logic |
 
 Skip an area entirely when the repository has no such thing. Do not invent a data layer
 for a library that has none.
 
+## Identity and voice
+
+The first screenful should look like somebody meant to write it.
+
+- Copy this skill's `reference/logo.png` into the README output directory as `logo.png`.
+- Start with the logo, project name, and one-sentence project summary.
+- Follow immediately with **The Rundown**.
+- Keep the writing casual, exact, and human. Dry hacker humor is welcome in small doses.
+- Commands, paths, versions, security findings, and limitations stay literal and boring. That is where boring is a feature.
+- Avoid corporate filler, assistant boilerplate, em dashes, and en dashes.
+- GitHub ignores custom README CSS, so do not depend on it. Use the logo, code fences, tables, badges, ASCII, and Mermaid for the theme.
+
+Full voice rules: `reference/output-profiles.md`.
+
 ## Required README structure
 
-Exactly these sections, in this order. The first two are at the very top.
+Use these sections in this order. The exact amount of detail changes with the project, not the headings.
 
-1. **Business Analyst Summary** — audience: BAs, product, stakeholders. 5-10 bullets,
-   evidence-based, plain language. Cover what it does, who uses it, key workflows, key
-   data concepts, integrations at a high level, operational impact. Avoid internal
-   implementation detail unless it affects behaviour or requirements. Unknown →
-   "Insufficient Evidence" plus what you searched.
-2. **Technical Summary** — audience: developers, DevOps, architects. 8-15 bullets,
-   evidence-based. Cover components, runtimes, major frameworks, hosting model, data
-   layer approach, auth and security model, CI/CD, observability. Include
-   "Where to start" pointers: paths to entrypoints and key folders.
-3. **Title** — from discovered repo/project/component metadata. Unclear → say
-   Insufficient Evidence and use the repository folder name.
-4. **Last Updated** — today's local date plus Last Commit Date (or Insufficient Evidence).
-5. **Table of Contents** — clickable anchor links, including anchors for the BA and
-   Technical summaries.
-6. **Repository Overview**
-7. **Components / Projects / Packages** — table: Component | Type | Language/Framework |
-   Runtime/Target | Path | Purpose
-8. **Architecture Overview** — Mermaid only if evidenced; otherwise ASCII
-9. **Tech Stack and Dependencies**
-10. **Project Layout**
-11. **Getting Started (Local Development)**
-12. **Configuration**
-13. **Running the System**
-14. **Deployment and CI/CD**
-15. **Deep Code Reference (Wiki Section)** — include a **Cross-Reference Index** table:
-    Component/Module/Class/Function | File Path | Key Methods | Notes. If a web or API
-    surface exists, include **API Surface**: Route/Controller/Endpoint | Auth |
-    Request/Response types | Implementation location
-16. **Data and Integrations**
-17. **Security Notes**
-18. **Observability and Monitoring**
-19. **Common Tasks and Troubleshooting**
+1. **Identity header:** `logo.png`, project title, and a short project summary.
+2. **The Rundown:** combine the old business and technical summaries into one human opening. Cover what it does, who uses it, key workflows, components, runtimes/frameworks, data, integrations, security posture, CI/CD, observability, current maturity, and where a developer should start. Keep it readable. Do not split it back into two executive-summary sections.
+3. **Last Updated:** today's local date plus Last Commit Date when repository evidence provides one.
+4. **Table of Contents:** clickable anchors, including The Rundown.
+5. **Repository Overview**
+6. **Components / Projects / Packages:** Component | Type | Language/Framework | Runtime/Target | Path | Purpose
+7. **Architecture Overview:** Mermaid only when evidenced; otherwise ASCII.
+8. **Tech Stack and Dependencies**
+9. **Project Layout**
+10. **Getting Started (Local Development)**
+11. **Configuration**
+12. **Running the System**
+13. **Deployment and CI/CD**
+14. **Deep Code Reference:** include a **Cross-Reference Index** table. If a web/API surface exists, include **API Surface** with route/controller/endpoint, auth, request/response types, and implementation location.
+15. **Data and Integrations**
+16. **Security Notes**
+17. **Observability and Monitoring**
+18. **Common Tasks and Troubleshooting**
+19. **Change Log:** meaningful product, architecture, compatibility, output, and security changes. Use **Added**, **Changed**, **Fixed**, **Removed**, and **Security** subsections when they apply. Do not invent versions or dates.
 20. **Contributing / Coding Standards**
-21. **License** — only if a LICENSE file exists; otherwise Insufficient Evidence
+21. **License:** only if a LICENSE file exists; otherwise `Insufficient Evidence`.
 
 ## Readability
 
@@ -203,12 +201,14 @@ Exactly these sections, in this order. The first two are at the very top.
 - Use collapsible sections (`<details>`) for large inventories, such as class lists per
   module.
 - Keep the top of the README fast: quick-start links and where-to-begin pointers.
-- Keep sections skimmable. Avoid walls of text.
+- Keep sections skimmable. Avoid walls of text. A joke can break tension; it cannot replace an explanation.
 
 ## Formatting constraints (non-negotiable)
 
 These exist because they break real renderers. `odin.py readme-lint` enforces every one
 of them mechanically.
+
+**No em dashes or en dashes in generated prose.** Use normal punctuation instead. ASCII `--` remains valid inside real CLI flags and code.
 
 **No emoji or icons in Markdown headings.** Any line beginning with one or more `#`
 must be plain ASCII. Emoji in headings get corrupted to literal `?` when written to
@@ -220,7 +220,7 @@ WRONG:  ## 🚀 Getting Started
 RIGHT:  ## Getting Started
 ```
 
-Emoji may be used sparingly in body text — paragraphs, table cells, bullets — but never
+Emoji may be used sparingly in body text, paragraphs, table cells, bullets, but never
 in a heading line.
 
 **No ampersands in headings.** GitHub's anchor generation for headings containing `&`
@@ -240,7 +240,7 @@ hrefs.
 ## Tech Stack and Dependencies          -->  #tech-stack-and-dependencies
 ```
 
-**Forbidden Unicode ranges — headings and body alike.** These render as `?` in the
+**Forbidden Unicode ranges, headings and body alike.** These render as `?` in the
 GitHub web UI:
 
 | Range | Block |
@@ -261,7 +261,7 @@ Safe replacements, and only these:
 | Boxes and borders | ASCII `+`, `-`, `\|` |
 | Bullets | `-` or `*` |
 
-**Architecture diagrams — preferred approach.** Use a ```` ```mermaid ```` flowchart
+**Architecture diagrams, preferred approach.** Use a ```` ```mermaid ```` flowchart
 block rather than ASCII art whenever showing architecture, data flows or component
 relationships. Mermaid renders natively on GitHub and sidesteps every encoding problem.
 Fall back to ASCII `+`/`-`/`|` boxes only when the diagram cannot be expressed in
@@ -274,11 +274,11 @@ Mermaid.
    (`odin.py readme-scan`).
 3. Enumerate all components, projects and packages, and their relationships.
 4. Identify entrypoints, config, build, test and deploy artifacts per component.
-5. Produce the README strictly from evidence — full overwrite in FULL GENERATION mode,
+5. Produce the README strictly from evidence, full overwrite in FULL GENERATION mode,
    affected sections only in INCREMENTAL UPDATE mode.
 6. Run `odin.py readme-lint` and fix every reported violation.
-7. At the very end of your response — **after** the README, in the terminal reply, not
-   in the file — list **15 to 40 "Evidence Files Referenced"** as bullet paths.
+7. At the very end of your response, **after** the README, in the terminal reply, not
+   in the file, list **15 to 40 "Evidence Files Referenced"** as bullet paths.
 
 ## Relationship to the packet
 
