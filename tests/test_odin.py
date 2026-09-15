@@ -1030,6 +1030,26 @@ class TestReadmeScan(FixtureCase):
         self.assertTrue(report["absences"]["no_ci"],
                         "a fixture with no CI must report the absence, not omit it")
 
+    def test_scan_finds_dotnet_manifests_despite_source_role(self):
+        """Regression: .sln/.csproj/Directory.Build.props are classified as
+        first-party source, so a role_hint-only query reported no_manifests=true
+        for a repository full of .NET manifests."""
+        write(self.repo / "App.sln", "Microsoft Visual Studio Solution File\n")
+        write(self.repo / "src" / "App" / "App.csproj", "<Project />\n")
+        write(self.repo / "Directory.Build.props", "<Project />\n")
+        write(self.repo / "global.json", "{}\n")
+        self.init()
+        run_odin("inventory", artifacts=self.artifacts)
+        run_odin("readme-scan", artifacts=self.artifacts)
+        report = json.loads(
+            (self.packet / "readme" / "component-map.json").read_text(encoding="utf-8"))
+        manifests = report["manifests_and_lockfiles"]
+        for expected in ("App.sln", "src/App/App.csproj",
+                         "Directory.Build.props", "global.json"):
+            with self.subTest(manifest=expected):
+                self.assertIn(expected, manifests)
+        self.assertFalse(report["absences"]["no_manifests"])
+
     def test_scan_excludes_vendored_and_vcs_content(self):
         self.init()
         run_odin("inventory", artifacts=self.artifacts)

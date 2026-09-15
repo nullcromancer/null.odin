@@ -120,6 +120,38 @@ TEST_FRAMEWORKS = [
     (r"(?i)\brspec\b", "RSpec"), (r"(?i)\bphpunit\b", "PHPUnit"),
 ]
 
+# Manifests and build files are also matched by path, not only by inventory
+# role_hint. Classification assigns .sln/.csproj/Directory.Build.props the
+# "first-party-source" role, so a role-only query reported no_manifests=true for
+# a repository full of .NET manifests.
+MANIFEST_PATTERNS = [
+    (r"\.slnx?$", ".NET solution"),
+    (r"\.(cs|fs|vb)proj$", ".NET project"),
+    (r"(^|/)Directory\.Build\.(props|targets)$", "MSBuild directory build file"),
+    (r"(^|/)Directory\.Packages\.props$", "NuGet central package management"),
+    (r"(^|/)global\.json$", ".NET SDK pin"),
+    (r"(?i)(^|/)nuget\.config$", "NuGet configuration"),
+    (r"(^|/)packages\.lock\.json$", "NuGet lockfile"),
+    (r"(^|/)package\.json$", "npm manifest"),
+    (r"(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$", "npm lockfile"),
+    (r"(^|/)pyproject\.toml$", "Python project"),
+    (r"(^|/)requirements[^/]*\.txt$", "Python requirements"),
+    (r"(^|/)(setup\.py|setup\.cfg|Pipfile|Pipfile\.lock|poetry\.lock)$", "Python manifest or lockfile"),
+    (r"(^|/)pom\.xml$", "Maven manifest"),
+    (r"(^|/)(build|settings)\.gradle(\.kts)?$", "Gradle build"),
+    (r"(^|/)go\.(mod|sum)$", "Go module"),
+    (r"(^|/)Cargo\.(toml|lock)$", "Cargo manifest or lockfile"),
+    (r"(^|/)Gemfile(\.lock)?$", "Bundler manifest or lockfile"),
+    (r"(^|/)composer\.(json|lock)$", "Composer manifest or lockfile"),
+]
+
+BUILD_PATTERNS = [
+    (r"(^|/)Makefile$", "Makefile"),
+    (r"(^|/)CMakeLists\.txt$", "CMake"),
+    (r"(^|/)gradlew(\.bat)?$", "Gradle wrapper"),
+    (r"(^|/)BUILD(\.bazel)?$", "Bazel"),
+]
+
 ENTRYPOINT_PATTERNS = [
     (r"(^|/)(main|Main)\.(py|go|rs|c|cpp|java|kt)$", "conventional main module"),
     (r"(^|/)Program\.cs$", ".NET program entrypoint"),
@@ -193,9 +225,16 @@ def scan(state):
     docs = collect(DOC_PATTERNS)
 
     manifest_roles = {"package-manifest", "lockfile"}
-    manifests = sorted(r["path"] for r in project if r.get("role_hint") in manifest_roles)
+    def collect_paths(patterns):
+        return [r["path"] for r in project if _matches(patterns, r["path"])]
+
+    # Union the role-derived set with path matching: classification labels .NET
+    # manifests as first-party source, so role_hint alone under-reports them.
+    manifests = sorted(set(r["path"] for r in project if r.get("role_hint") in manifest_roles)
+                       | set(collect_paths(MANIFEST_PATTERNS)))
     tests = sorted(r["path"] for r in project if r.get("role_hint") == "test")
-    build = sorted(r["path"] for r in project if r.get("role_hint") == "build")
+    build = sorted(set(r["path"] for r in project if r.get("role_hint") == "build")
+                   | set(collect_paths(BUILD_PATTERNS)))
 
     # Test frameworks, from manifest and test-file content.
     frameworks = set()
